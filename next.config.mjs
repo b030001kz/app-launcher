@@ -7,4 +7,8 @@ const withPWA = nextPWA({
     disable: process.env.NODE_ENV === 'development'
 })
 
-export default nextConfig
+const nextConfig = {
+    /* config options here */
+}
+
+export default withPWA(nextConfig)
