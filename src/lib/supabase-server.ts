@@ -9,19 +9,23 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 let _supabaseAdmin: ReturnType<typeof createClient<Database>> | null = null
 
 export function getSupabaseAdmin() {
-    // 環境変数が無い場合はエラーを投げず、実行時にエラーになるようにするか
-    // もしくはnullを返して呼び出し側でチェックさせる。
-    // ビルドを確実に通すため、未設定時は警告を出しつつnullを許容する構成にする。
-    if (!supabaseUrl || !supabaseServiceKey) {
+    // 実行時に環境変数をチェック
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!url || !key) {
+        const errorMsg = 'Supabase environment variables (URL or Service Role Key) are missing.'
+        console.error(errorMsg)
+        // ビルド時（Next.jsの静的解析）は無視し、実行時のみエラーを投げる
         if (process.env.NODE_ENV === 'production') {
-            // 本番実行時は本来エラーであるべきだが、ビルド時のチェック回避用
-            console.warn('Warning: Supabase environment variables are missing.')
+            // 本番環境での実行時エラー
+            throw new Error(errorMsg)
         }
-        return null as any // 呼び出し側でチェーンがエラーになるが、ビルド時の実行は回避できる
+        return null as any
     }
 
     if (!_supabaseAdmin) {
-        _supabaseAdmin = createClient<Database>(supabaseUrl, supabaseServiceKey)
+        _supabaseAdmin = createClient<Database>(url, key)
     }
     return _supabaseAdmin
 }
