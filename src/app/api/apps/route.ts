@@ -2,6 +2,8 @@ import { auth } from '@clerk/nextjs/server'
 import { getSupabaseAdmin } from '@/lib/supabase-server'
 import { NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
     const { userId } = await auth()
     if (!userId) {
@@ -12,7 +14,7 @@ export async function GET() {
         const supabase = getSupabaseAdmin()
         const { data, error } = await supabase
             .from('apps')
-            .select('*')
+            .select('*, categories(*), projects(*)')
             .eq('user_id', userId)
             .order('sort_order', { ascending: true })
 

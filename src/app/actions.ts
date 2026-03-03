@@ -4,7 +4,8 @@ import { auth } from '@clerk/nextjs/server'
 import { getSupabaseAdmin } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 
-// アプリ一覧を取得
+// --- Apps ---
+
 export async function getApps() {
     try {
         const { userId } = await auth()
@@ -13,7 +14,7 @@ export async function getApps() {
         const supabase = getSupabaseAdmin()
         const { data, error } = await supabase
             .from('apps')
-            .select('*')
+            .select('*, categories(*), projects(*)')
             .eq('user_id', userId)
             .order('sort_order', { ascending: true })
 
@@ -25,7 +26,6 @@ export async function getApps() {
     }
 }
 
-// アプリを1件取得
 export async function getApp(id: string) {
     try {
         const { userId } = await auth()
@@ -34,7 +34,7 @@ export async function getApp(id: string) {
         const supabase = getSupabaseAdmin()
         const { data, error } = await supabase
             .from('apps')
-            .select('*')
+            .select('*, categories(*), projects(*)')
             .eq('id', id)
             .eq('user_id', userId)
             .single()
@@ -47,15 +47,17 @@ export async function getApp(id: string) {
     }
 }
 
-// アプリを追加
 export async function createApp(formData: {
     name: string
+    display_name?: string | null
     url: string
     icon: string
     description: string
     tags: string[]
     status: '採用' | '保留' | '除外'
     sort_order: number
+    category_id?: string | null
+    project_id?: string | null
 }) {
     try {
         const { userId } = await auth()
@@ -74,15 +76,17 @@ export async function createApp(formData: {
     }
 }
 
-// アプリを更新
 export async function updateApp(id: string, formData: {
     name: string
+    display_name?: string | null
     url: string
     icon: string
     description: string
     tags: string[]
     status: '採用' | '保留' | '除外'
     sort_order: number
+    category_id?: string | null
+    project_id?: string | null
 }) {
     try {
         const { userId } = await auth()
@@ -103,7 +107,6 @@ export async function updateApp(id: string, formData: {
     }
 }
 
-// アプリを削除
 export async function deleteApp(id: string) {
     try {
         const { userId } = await auth()
@@ -124,7 +127,48 @@ export async function deleteApp(id: string) {
     }
 }
 
-// Vercelプロジェクト一覧を取得
+// --- Categories ---
+
+export async function getCategories() {
+    const { userId } = await auth()
+    if (!userId) return []
+    const supabase = getSupabaseAdmin()
+    const { data, error } = await supabase.from('categories').select('*').eq('user_id', userId).order('name')
+    if (error) throw error
+    return data
+}
+
+export async function createCategory(name: string, color?: string) {
+    const { userId } = await auth()
+    if (!userId) throw new Error('認証が必要です')
+    const supabase = getSupabaseAdmin()
+    const { data, error } = await supabase.from('categories').insert({ name, color, user_id: userId }).select().single()
+    if (error) throw error
+    return data
+}
+
+// --- Projects ---
+
+export async function getProjects() {
+    const { userId } = await auth()
+    if (!userId) return []
+    const supabase = getSupabaseAdmin()
+    const { data, error } = await supabase.from('projects').select('*').eq('user_id', userId).order('name')
+    if (error) throw error
+    return data
+}
+
+export async function createProject(name: string, description?: string, color?: string) {
+    const { userId } = await auth()
+    if (!userId) throw new Error('認証が必要です')
+    const supabase = getSupabaseAdmin()
+    const { data, error } = await supabase.from('projects').insert({ name, description, color, user_id: userId }).select().single()
+    if (error) throw error
+    return data
+}
+
+// --- Vercel ---
+
 export async function getVercelProjects(token: string) {
     try {
         const res = await fetch('https://api.vercel.com/v9/projects', {
@@ -153,15 +197,17 @@ export async function getVercelProjects(token: string) {
     }
 }
 
-// Vercelプロジェクトを一括インポート
 export async function importVercelApps(apps: {
     name: string
+    display_name?: string | null
     url: string
     icon: string
     description: string
     tags: string[]
     status: '採用' | '保留' | '除外'
     sort_order: number
+    category_id?: string | null
+    project_id?: string | null
 }[]) {
     try {
         const { userId } = await auth()
@@ -170,15 +216,8 @@ export async function importVercelApps(apps: {
         const supabase = getSupabaseAdmin()
         if (!supabase) throw new Error('Supabase admin client could not be initialized.')
 
-        // payloadの作成
         const payload = apps.map(app => ({
-            name: app.name,
-            url: app.url,
-            icon: app.icon || '🚀',
-            description: app.description || '',
-            tags: Array.isArray(app.tags) ? app.tags : [],
-            status: app.status || '採用',
-            sort_order: typeof app.sort_order === 'number' ? app.sort_order : 0,
+            ...app,
             user_id: userId
         }))
 
@@ -195,12 +234,10 @@ export async function importVercelApps(apps: {
         return { success: true }
     } catch (err: any) {
         console.error('importVercelApps error:', err)
-        // クライアントに安全にエラーを投げる
         throw new Error(err.message || 'インポート中に不明なエラーが発生しました')
     }
 }
 
-// Vercel連携情報を保存
 export async function saveVercelConnection(token: string) {
     try {
         const { userId } = await auth()
@@ -219,7 +256,6 @@ export async function saveVercelConnection(token: string) {
     }
 }
 
-// Vercel連携情報を取得
 export async function getVercelConnection() {
     try {
         const { userId } = await auth()
@@ -242,7 +278,6 @@ export async function getVercelConnection() {
     }
 }
 
-// Vercel連携を解除
 export async function disconnectVercel() {
     try {
         const { userId } = await auth()
@@ -261,4 +296,3 @@ export async function disconnectVercel() {
         throw err
     }
 }
-

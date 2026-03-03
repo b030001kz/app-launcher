@@ -14,10 +14,13 @@ export type Database = {
                     id: string
                     user_id: string
                     name: string
+                    display_name: string | null
                     url: string
                     description: string | null
                     icon: string | null
                     tags: string[] | null
+                    category_id: string | null
+                    project_id: string | null
                     status: '採用' | '保留' | '除外'
                     sort_order: number
                     created_at: string
@@ -27,10 +30,13 @@ export type Database = {
                     id?: string
                     user_id: string
                     name: string
+                    display_name?: string | null
                     url: string
                     description?: string | null
                     icon?: string | null
                     tags?: string[] | null
+                    category_id?: string | null
+                    project_id?: string | null
                     status?: '採用' | '保留' | '除外'
                     sort_order?: number
                     created_at?: string
@@ -40,24 +46,84 @@ export type Database = {
                     id?: string
                     user_id?: string
                     name?: string
+                    display_name?: string | null
                     url?: string
                     description?: string | null
                     icon?: string | null
                     tags?: string[] | null
+                    category_id?: string | null
+                    project_id?: string | null
                     status?: '採用' | '保留' | '除外'
                     sort_order?: number
                     created_at?: string
                     updated_at?: string
                 }
-                Relationships: [
-                    {
-                        foreignKeyName: "apps_user_id_fkey"
-                        columns: ["user_id"]
-                        isOneToOne: false
-                        referencedRelation: "users"
-                        referencedColumns: ["id"]
-                    }
-                ]
+            }
+            categories: {
+                Row: {
+                    id: string
+                    user_id: string
+                    name: string
+                    color: string | null
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    name: string
+                    color?: string | null
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    name?: string
+                    color?: string | null
+                    created_at?: string
+                }
+            }
+            projects: {
+                Row: {
+                    id: string
+                    user_id: string
+                    name: string
+                    description: string | null
+                    color: string | null
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    name: string
+                    description?: string | null
+                    color?: string | null
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    name?: string
+                    description?: string | null
+                    color?: string | null
+                    created_at?: string
+                }
+            }
+            vercel_connections: {
+                Row: {
+                    user_id: string
+                    access_token: string
+                    created_at: string
+                }
+                Insert: {
+                    user_id: string
+                    access_token: string
+                    created_at?: string
+                }
+                Update: {
+                    user_id?: string
+                    access_token?: string
+                    created_at?: string
+                }
             }
         }
         Views: {
@@ -68,9 +134,6 @@ export type Database = {
         }
         Enums: {
             app_status: '採用' | '保留' | '除外'
-        }
-        CompositeTypes: {
-            [_ in never]: never
         }
     }
 }
