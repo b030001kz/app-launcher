@@ -75,7 +75,16 @@ export default function DashboardPage() {
             </div>
             <h1 className="text-lg sm:text-xl font-bold text-slate-900">App Launcher</h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link href="/import">
+              <Button size="sm" variant="outline" className="gap-1.5 border-slate-200 text-slate-600 hover:bg-slate-50">
+                <svg viewBox="0 0 76 65" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 fill-current">
+                  <path d="M37.5274 0L75.0548 65H0L37.5274 0Z" />
+                </svg>
+                <span className="hidden sm:inline">Vercel連携</span>
+                <span className="sm:hidden text-[10px]">連携</span>
+              </Button>
+            </Link>
             <Link href="/apps/new">
               <Button size="sm" className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
                 <Plus className="h-4 w-4" />
