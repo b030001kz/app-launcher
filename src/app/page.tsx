@@ -42,7 +42,7 @@ export default function DashboardPage() {
     fetchApps()
   }, [isLoaded, isSignedIn])
 
-  const projects = Array.from(new Map(apps.map(app => [app.projects?.id, app.projects]).filter(([id]) => !!id)).values())
+  const projects = Array.from(new Map(apps.map(app => [app.projects?.id, app.projects] as const).filter((entry): entry is [string, any] => !!entry[0])).values())
 
   const filteredApps = apps.filter(app => {
     const matchesSearch =
