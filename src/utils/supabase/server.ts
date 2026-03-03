@@ -5,9 +5,29 @@ import { Database } from '@/types/supabase'
 export const createClient = async () => {
     const cookieStore = await cookies()
 
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    // ビルド時に環境変数が未設定の場合のフォールバック
+    if (!supabaseUrl || !supabaseAnonKey) {
+        return createServerClient<Database>(
+            'https://placeholder.supabase.co',
+            'placeholder-key',
+            {
+                cookies: {
+                    get(name: string) {
+                        return cookieStore.get(name)?.value
+                    },
+                    set() { },
+                    remove() { },
+                },
+            }
+        )
+    }
+
     return createServerClient<Database>(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        supabaseUrl,
+        supabaseAnonKey,
         {
             cookies: {
                 get(name: string) {
@@ -17,18 +37,14 @@ export const createClient = async () => {
                     try {
                         cookieStore.set({ name, value, ...options })
                     } catch (error) {
-                        // The `set` method was called from a Server Component.
-                        // This can be ignored if you have middleware refreshing
-                        // user sessions.
+                        // Server Component から呼ばれた場合は無視
                     }
                 },
                 remove(name: string, options: CookieOptions) {
                     try {
                         cookieStore.set({ name, value: '', ...options })
                     } catch (error) {
-                        // The `delete` method was called from a Server Component.
-                        // This can be ignored if you have middleware refreshing
-                        // user sessions.
+                        // Server Component から呼ばれた場合は無視
                     }
                 },
             },
