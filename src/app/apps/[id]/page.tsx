@@ -1,8 +1,8 @@
-import { createClient } from '@/utils/supabase/server'
+import { getApp } from '@/app/actions'
 import AppForm from '@/components/AppForm'
 import { notFound } from 'next/navigation'
+import { auth } from '@clerk/nextjs/server'
 
-// ビルド時のプリレンダリングを無効化（Supabase接続に実行時の環境変数が必要）
 export const dynamic = 'force-dynamic'
 
 interface EditAppPageProps {
@@ -10,18 +10,15 @@ interface EditAppPageProps {
 }
 
 export default async function EditAppPage({ params }: EditAppPageProps) {
+    const { userId } = await auth()
+    if (!userId) notFound()
+
     const { id } = await params
-    const supabase = await createClient()
 
-    const { data: app, error } = await supabase
-        .from('apps')
-        .select('*')
-        .eq('id', id)
-        .single()
-
-    if (error || !app) {
+    try {
+        const app = await getApp(id)
+        return <AppForm initialData={app} isEditing />
+    } catch {
         notFound()
     }
-
-    return <AppForm initialData={app} isEditing />
 }

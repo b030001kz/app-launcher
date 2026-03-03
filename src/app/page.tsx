@@ -1,68 +1,42 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { useEffect, useState } from 'react'
+import { UserButton, useUser } from '@clerk/nextjs'
 import { Database } from '@/types/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Search, ExternalLink, Settings, LogOut } from 'lucide-react'
+import { Plus, Search, ExternalLink, Settings } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
 
 type AppRow = Database['public']['Tables']['apps']['Row']
 
-function DashboardContent() {
+export default function DashboardPage() {
+  const { isLoaded, isSignedIn } = useUser()
   const [apps, setApps] = useState<AppRow[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'全て' | '採用' | '保留' | '除外'>('全て')
-  const [user, setUser] = useState<any>(null)
-
-  const supabase = createClient()
-  const router = useRouter()
-  const searchParams = useSearchParams()
 
   useEffect(() => {
-    const handleAuthAndFetch = async () => {
-      // URLにcodeパラメータがある場合、セッションを確立する
-      const code = searchParams.get('code')
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
-        if (!error) {
-          // URLからcodeパラメータを除去
-          router.replace('/')
-          return
+    if (!isLoaded || !isSignedIn) return
+
+    const fetchApps = async () => {
+      try {
+        const res = await fetch('/api/apps')
+        if (res.ok) {
+          const data = await res.json()
+          setApps(data)
         }
+      } catch (err) {
+        console.error('Failed to fetch apps:', err)
+      } finally {
+        setLoading(false)
       }
-
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
-      }
-      setUser(user)
-
-      const { data, error } = await supabase
-        .from('apps')
-        .select('*')
-        .order('sort_order', { ascending: true })
-
-      if (error) {
-        console.error('Error fetching apps:', error)
-      } else {
-        setApps(data || [])
-      }
-      setLoading(false)
     }
 
-    handleAuthAndFetch()
-  }, [])
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
-  }
+    fetchApps()
+  }, [isLoaded, isSignedIn])
 
   const filteredApps = apps.filter(app => {
     const matchesSearch =
@@ -71,57 +45,75 @@ function DashboardContent() {
       (app.tags?.some(tag => tag.toLowerCase().includes(search.toLowerCase())))
 
     const matchesStatus = statusFilter === '全て' || app.status === statusFilter
-
     if (statusFilter === '全て' && app.status === '除外') return false
 
     return matchesSearch && matchesStatus
   })
 
-  if (loading) {
+  const statusColors = {
+    '採用': 'bg-emerald-500',
+    '保留': 'bg-amber-500',
+    '除外': 'bg-slate-400',
+  }
+
+  if (!isLoaded || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground animate-pulse">読み込み中...</p>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        <p className="text-slate-400 animate-pulse text-lg">読み込み中...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-white border-b px-4 py-3 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-primary">App Launcher</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={handleLogout}>
-            <LogOut className="h-5 w-5" />
-          </Button>
-          <Link href="/apps/new">
-            <Button size="icon" className="rounded-full shadow-lg">
-              <Plus className="h-6 w-6" />
-            </Button>
-          </Link>
+      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white text-sm font-bold">A</span>
+            </div>
+            <h1 className="text-lg sm:text-xl font-bold text-slate-900">App Launcher</h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link href="/apps/new">
+              <Button size="sm" className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">追加</span>
+              </Button>
+            </Link>
+            <UserButton
+              afterSignOutUrl="/sign-in"
+              appearance={{
+                elements: {
+                  avatarBox: 'w-8 h-8',
+                },
+              }}
+            />
+          </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto p-4 space-y-4">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         {/* Search and Filter */}
-        <div className="flex flex-col gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               placeholder="アプリ名、タグ、説明を検索..."
-              className="pl-9 bg-white"
+              className="pl-9 bg-white border-slate-200 h-10"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar text-sm">
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
             {(['全て', '採用', '保留', '除外'] as const).map(status => (
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
-                className={`px-4 py-1.5 rounded-full border whitespace-nowrap transition-colors ${statusFilter === status
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-white text-muted-foreground hover:bg-slate-100'
+                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${statusFilter === status
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                   }`}
               >
                 {status}
@@ -130,42 +122,48 @@ function DashboardContent() {
           </div>
         </div>
 
-        {/* App List */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* App Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredApps.length > 0 ? (
             filteredApps.map(app => (
-              <Card key={app.id} className="group hover:shadow-md transition-shadow relative overflow-hidden bg-white">
-                <div className={`absolute top-0 right-0 w-12 h-12 flex items-center justify-center rotate-45 translate-x-3 -translate-y-3 ${app.status === '採用' ? 'bg-green-100/50' : app.status === '保留' ? 'bg-amber-100/50' : 'bg-slate-100/50'
-                  }`} />
-
-                <CardHeader className="flex flex-row items-center gap-4 pb-2">
-                  <div className="text-4xl flex-shrink-0 w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center">
-                    {app.icon || '📱'}
-                  </div>
-                  <div className="min-w-0">
-                    <CardTitle className="truncate">{app.name}</CardTitle>
-                    <CardDescription className="line-clamp-1">{app.description || '説明なし'}</CardDescription>
+              <Card key={app.id} className="group hover:shadow-lg transition-all duration-200 bg-white border-slate-200 overflow-hidden">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start gap-3">
+                    <div className="text-3xl flex-shrink-0 w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
+                      {app.icon || '📱'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-base truncate">{app.name}</CardTitle>
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${statusColors[app.status]}`} />
+                      </div>
+                      <CardDescription className="line-clamp-2 text-xs mt-1">
+                        {app.description || '説明なし'}
+                      </CardDescription>
+                    </div>
                   </div>
                 </CardHeader>
-                <CardContent className="pb-3">
-                  <div className="flex flex-wrap gap-1">
-                    {app.tags?.map(tag => (
-                      <span key={tag} className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-0 flex gap-2">
+                {app.tags && app.tags.length > 0 && (
+                  <CardContent className="pb-3 pt-0">
+                    <div className="flex flex-wrap gap-1">
+                      {app.tags.map(tag => (
+                        <span key={tag} className="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full font-medium">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </CardContent>
+                )}
+                <CardFooter className="pt-0 pb-4 flex gap-2">
                   <a href={app.url} target="_blank" rel="noopener noreferrer" className="flex-1">
-                    <Button variant="default" className="w-full gap-2">
-                      <ExternalLink className="h-4 w-4" />
+                    <Button variant="default" size="sm" className="w-full gap-1.5 bg-blue-600 hover:bg-blue-700">
+                      <ExternalLink className="h-3.5 w-3.5" />
                       開く
                     </Button>
                   </a>
                   <Link href={`/apps/${app.id}`}>
-                    <Button variant="outline" size="icon">
-                      <Settings className="h-4 w-4" />
+                    <Button variant="outline" size="sm" className="border-slate-200">
+                      <Settings className="h-3.5 w-3.5" />
                     </Button>
                   </Link>
                 </CardFooter>
@@ -173,30 +171,15 @@ function DashboardContent() {
             ))
           ) : (
             <div className="col-span-full py-20 text-center">
-              <p className="text-muted-foreground">アプリが見つかりません</p>
-              <Button variant="link" onClick={() => { setSearch(''); setStatusFilter('全て'); }}>
+              <div className="text-5xl mb-4">🔍</div>
+              <p className="text-slate-500 mb-2">アプリが見つかりません</p>
+              <Button variant="link" className="text-blue-600" onClick={() => { setSearch(''); setStatusFilter('全て'); }}>
                 フィルタをリセット
               </Button>
             </div>
           )}
         </div>
       </main>
-
-      <footer className="fixed bottom-0 w-full bg-white/80 backdrop-blur-md border-t px-4 py-2 text-[10px] text-center text-muted-foreground sm:hidden">
-        ホーム画面に追加してフルスクリーンで利用できます
-      </footer>
     </div>
-  )
-}
-
-export default function Dashboard() {
-  return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground animate-pulse">読み込み中...</p>
-      </div>
-    }>
-      <DashboardContent />
-    </Suspense>
   )
 }
