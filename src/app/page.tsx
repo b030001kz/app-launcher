@@ -1,18 +1,18 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { Database } from '@/types/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Search, ExternalLink, Settings, LogOut, Filter } from 'lucide-react'
+import { Plus, Search, ExternalLink, Settings, LogOut } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 type AppRow = Database['public']['Tables']['apps']['Row']
 
-export default function Dashboard() {
+function DashboardContent() {
   const [apps, setApps] = useState<AppRow[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -21,9 +21,21 @@ export default function Dashboard() {
 
   const supabase = createClient()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
-    const fetchUserAndApps = async () => {
+    const handleAuthAndFetch = async () => {
+      // URLにcodeパラメータがある場合、セッションを確立する
+      const code = searchParams.get('code')
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        if (!error) {
+          // URLからcodeパラメータを除去
+          router.replace('/')
+          return
+        }
+      }
+
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         router.push('/login')
@@ -44,12 +56,12 @@ export default function Dashboard() {
       setLoading(false)
     }
 
-    fetchUserAndApps()
-  }, [supabase, router])
+    handleAuthAndFetch()
+  }, [])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
-    router.refresh()
+    router.push('/login')
   }
 
   const filteredApps = apps.filter(app => {
@@ -60,7 +72,6 @@ export default function Dashboard() {
 
     const matchesStatus = statusFilter === '全て' || app.status === statusFilter
 
-    // 「全て」を選択中は「除外」を表示しない（明示的に除外を選んだ時だけ表示）
     if (statusFilter === '全て' && app.status === '除外') return false
 
     return matchesSearch && matchesStatus
@@ -109,8 +120,8 @@ export default function Dashboard() {
                 key={status}
                 onClick={() => setStatusFilter(status)}
                 className={`px-4 py-1.5 rounded-full border whitespace-nowrap transition-colors ${statusFilter === status
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-white text-muted-foreground hover:bg-slate-100'
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-white text-muted-foreground hover:bg-slate-100'
                   }`}
               >
                 {status}
@@ -124,7 +135,6 @@ export default function Dashboard() {
           {filteredApps.length > 0 ? (
             filteredApps.map(app => (
               <Card key={app.id} className="group hover:shadow-md transition-shadow relative overflow-hidden bg-white">
-                {/* Status Indicator */}
                 <div className={`absolute top-0 right-0 w-12 h-12 flex items-center justify-center rotate-45 translate-x-3 -translate-y-3 ${app.status === '採用' ? 'bg-green-100/50' : app.status === '保留' ? 'bg-amber-100/50' : 'bg-slate-100/50'
                   }`} />
 
@@ -147,12 +157,7 @@ export default function Dashboard() {
                   </div>
                 </CardContent>
                 <CardFooter className="pt-0 flex gap-2">
-                  <a
-                    href={app.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1"
-                  >
+                  <a href={app.url} target="_blank" rel="noopener noreferrer" className="flex-1">
                     <Button variant="default" className="w-full gap-2">
                       <ExternalLink className="h-4 w-4" />
                       開く
@@ -177,10 +182,21 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Quick Access Info for Mobile PWA */}
       <footer className="fixed bottom-0 w-full bg-white/80 backdrop-blur-md border-t px-4 py-2 text-[10px] text-center text-muted-foreground sm:hidden">
         ホーム画面に追加してフルスクリーンで利用できます
       </footer>
     </div>
+  )
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-muted-foreground animate-pulse">読み込み中...</p>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   )
 }
