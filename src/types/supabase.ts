@@ -6,7 +6,7 @@ export type Json =
     | { [key: string]: Json | undefined }
     | Json[]
 
-export interface Database {
+export type Database = {
     public: {
         Tables: {
             apps: {
@@ -49,7 +49,28 @@ export interface Database {
                     created_at?: string
                     updated_at?: string
                 }
+                Relationships: [
+                    {
+                        foreignKeyName: "apps_user_id_fkey"
+                        columns: ["user_id"]
+                        isOneToOne: false
+                        referencedRelation: "users"
+                        referencedColumns: ["id"]
+                    }
+                ]
             }
+        }
+        Views: {
+            [_ in never]: never
+        }
+        Functions: {
+            [_ in never]: never
+        }
+        Enums: {
+            app_status: '採用' | '保留' | '除外'
+        }
+        CompositeTypes: {
+            [_ in never]: never
         }
     }
 }

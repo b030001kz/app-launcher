@@ -41,8 +41,7 @@ export default function AppForm({ initialData, isEditing = false }: AppFormProps
 
         const tagsArray = formData.tags.split(',').map(tag => tag.trim()).filter(Boolean)
 
-        const payload = {
-            user_id: user.id,
+        const basePayload = {
             name: formData.name,
             url: formData.url,
             icon: formData.icon,
@@ -56,13 +55,13 @@ export default function AppForm({ initialData, isEditing = false }: AppFormProps
         if (isEditing && initialData) {
             const { error: updateError } = await supabase
                 .from('apps')
-                .update(payload)
+                .update(basePayload)
                 .eq('id', initialData.id)
             error = updateError
         } else {
             const { error: insertError } = await supabase
                 .from('apps')
-                .insert([payload])
+                .insert([{ ...basePayload, user_id: user.id }])
             error = insertError
         }
 
