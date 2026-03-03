@@ -199,3 +199,66 @@ export async function importVercelApps(apps: {
         throw new Error(err.message || 'インポート中に不明なエラーが発生しました')
     }
 }
+
+// Vercel連携情報を保存
+export async function saveVercelConnection(token: string) {
+    try {
+        const { userId } = await auth()
+        if (!userId) throw new Error('認証が必要です')
+
+        const supabase = getSupabaseAdmin()
+        const { error } = await supabase
+            .from('vercel_connections')
+            .upsert({ user_id: userId, access_token: token })
+
+        if (error) throw new Error(error.message)
+        revalidatePath('/')
+    } catch (err: any) {
+        console.error('saveVercelConnection error:', err)
+        throw err
+    }
+}
+
+// Vercel連携情報を取得
+export async function getVercelConnection() {
+    try {
+        const { userId } = await auth()
+        if (!userId) return null
+
+        const supabase = getSupabaseAdmin()
+        const { data, error } = await supabase
+            .from('vercel_connections')
+            .select('access_token')
+            .eq('user_id', userId)
+            .maybeSingle()
+
+        if (error) {
+            console.error('getVercelConnection error:', error)
+            return null
+        }
+        return data?.access_token || null
+    } catch (err) {
+        return null
+    }
+}
+
+// Vercel連携を解除
+export async function disconnectVercel() {
+    try {
+        const { userId } = await auth()
+        if (!userId) throw new Error('認証が必要です')
+
+        const supabase = getSupabaseAdmin()
+        const { error } = await supabase
+            .from('vercel_connections')
+            .delete()
+            .eq('user_id', userId)
+
+        if (error) throw new Error(error.message)
+        revalidatePath('/')
+    } catch (err: any) {
+        console.error('disconnectVercel error:', err)
+        throw err
+    }
+}
+
