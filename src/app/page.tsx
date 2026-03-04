@@ -6,7 +6,7 @@ import { Database } from '@/types/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Search, ExternalLink, Settings, Folder, Tag, LayoutGrid, Menu, X, Pencil, StickyNote, ArrowUpDown, Wrench, CheckCircle2, List } from 'lucide-react'
+import { Plus, Search, ExternalLink, Settings, Folder, Tag, LayoutGrid, Menu, X, Pencil, StickyNote, ArrowUpDown, Wrench, CheckCircle2, List, Settings2 } from 'lucide-react'
 import Link from 'next/link'
 
 type AppWithRelations = Database['public']['Tables']['apps']['Row'] & {
@@ -31,6 +31,17 @@ export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sortBy, setSortBy] = useState<SortType>('name')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [showPropertiesMenu, setShowPropertiesMenu] = useState(false)
+  const [visibleProps, setVisibleProps] = useState({
+    icon: true,
+    status: true,
+    category: true,
+    project: true,
+    tags: true,
+    notes: true,
+    tasks: true,
+    url: true,
+  })
 
   // インライン編集用ステート
   const [editingDisplayName, setEditingDisplayName] = useState<string | null>(null)
@@ -344,7 +355,36 @@ export default function DashboardPage() {
                 <option value="created">新しい順</option>
                 <option value="status">ステータス順</option>
               </select>
-              <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5 ml-1 hidden sm:flex">
+              <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5 ml-1 hidden sm:flex relative">
+                <button
+                  onClick={() => setShowPropertiesMenu(!showPropertiesMenu)}
+                  className={`p-1.5 rounded-md transition-colors ${showPropertiesMenu ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                  title="表示項目の設定"
+                >
+                  <Settings2 className="h-3.5 w-3.5" />
+                </button>
+                {/* Properties Dropdown */}
+                {showPropertiesMenu && (
+                  <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-lg ring-1 ring-slate-200 z-50 p-2 flex flex-col gap-1">
+                    <div className="text-xs font-bold text-slate-400 px-2 py-1 mb-1">表示する項目</div>
+                    {Object.entries({
+                      icon: 'アイコン', status: 'ステータス', category: 'カテゴリ',
+                      project: 'プロジェクト', tags: 'タグ', notes: 'メモ',
+                      tasks: 'タスク進捗', url: 'URLリンク'
+                    }).map(([key, label]) => (
+                      <label key={key} className="flex items-center gap-2 px-2 py-1 hover:bg-slate-50 rounded-lg cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5"
+                          checked={visibleProps[key as keyof typeof visibleProps]}
+                          onChange={(e) => setVisibleProps(prev => ({ ...prev, [key]: e.target.checked }))}
+                        />
+                        <span className="text-sm text-slate-700">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                <div className="w-px h-4 bg-slate-200 mx-0.5" />
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
@@ -386,9 +426,11 @@ export default function DashboardPage() {
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="text-2xl w-11 h-11 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 duration-300">
-                          {app.icon || '📱'}
-                        </div>
+                        {visibleProps.icon && (
+                          <div className="text-2xl w-11 h-11 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 duration-300">
+                            {app.icon || '📱'}
+                          </div>
+                        )}
                         <div className="min-w-0 flex-1">
                           {/* 表示名（クリックでインライン編集） */}
                           {editingDisplayName === app.id ? (
@@ -421,25 +463,27 @@ export default function DashboardPage() {
                           )}
                           {/* 元のアプリ名（常に小さく表示） */}
                           <p className="text-[10px] text-slate-400 font-mono truncate mt-0.5">{app.name}</p>
-                          <div className="flex items-center gap-1.5 mt-1">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                const nextStatus: Record<string, string> = {
-                                  '採用': '保留', '保留': '企画中', '企画中': '採用', '除外': '採用'
-                                }
-                                handleQuickStatus(app.id, nextStatus[app.status] || '採用')
-                              }}
-                              className="flex items-center gap-1 hover:bg-slate-100 rounded px-1 py-0.5 transition-colors"
-                              title="クリックでステータス切替"
-                            >
-                              <span className={`w-1.5 h-1.5 rounded-full ${app.status === '採用' ? 'bg-emerald-500'
-                                : app.status === '企画中' ? 'bg-amber-400'
-                                  : app.status === '保留' ? 'bg-slate-400' : 'bg-red-400'
-                                }`} />
-                              <span className="text-[11px] text-slate-500 font-medium">{app.status}</span>
-                            </button>
-                          </div>
+                          {visibleProps.status && (
+                            <div className="flex items-center gap-1.5 mt-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const nextStatus: Record<string, string> = {
+                                    '採用': '保留', '保留': '企画中', '企画中': '採用', '除外': '採用'
+                                  }
+                                  handleQuickStatus(app.id, nextStatus[app.status] || '採用')
+                                }}
+                                className="flex items-center gap-1 hover:bg-slate-100 rounded px-1 py-0.5 transition-colors"
+                                title="クリックでステータス切替"
+                              >
+                                <span className={`w-1.5 h-1.5 rounded-full ${app.status === '採用' ? 'bg-emerald-500'
+                                  : app.status === '企画中' ? 'bg-amber-400'
+                                    : app.status === '保留' ? 'bg-slate-400' : 'bg-red-400'
+                                  }`} />
+                                <span className="text-[11px] text-slate-500 font-medium">{app.status}</span>
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -449,7 +493,7 @@ export default function DashboardPage() {
                       {app.description || '説明なし'}
                     </p>
                     {/* メモプレビュー */}
-                    {app.notes && (
+                    {visibleProps.notes && app.notes && (
                       <div className="mt-2 p-2 bg-amber-50/80 rounded-lg border border-amber-100">
                         <p className="text-xs text-amber-700 line-clamp-2 flex items-start gap-1">
                           <StickyNote className="h-3 w-3 mt-0.5 flex-shrink-0" />
@@ -458,7 +502,7 @@ export default function DashboardPage() {
                       </div>
                     )}
                     {/* タスク進捗 */}
-                    {app.app_tasks && app.app_tasks.length > 0 && (() => {
+                    {visibleProps.tasks && app.app_tasks && app.app_tasks.length > 0 && (() => {
                       const total = app.app_tasks!.length
                       const done = app.app_tasks!.filter(t => t.completed).length
                       const pct = Math.round((done / total) * 100)
@@ -480,32 +524,34 @@ export default function DashboardPage() {
                         </div>
                       )
                     })()}
-                    <div className="flex flex-wrap gap-1.5 mt-3">
-                      {app.categories && (
-                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold"
-                          style={{
-                            backgroundColor: (app.categories.color || '#6366f1') + '15',
-                            color: app.categories.color || '#6366f1'
-                          }}>
-                          <Tag className="h-2.5 w-2.5" />
-                          {app.categories.name}
-                        </span>
-                      )}
-                      {app.projects && (
-                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-bold">
-                          <Folder className="h-2.5 w-2.5" />
-                          {app.projects.name}
-                        </span>
-                      )}
-                      {app.tags?.slice(0, 2).map((tag: string) => (
-                        <span key={tag} className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
+                    {(visibleProps.category || visibleProps.project || visibleProps.tags) && (
+                      <div className="flex flex-wrap gap-1.5 mt-3">
+                        {visibleProps.category && app.categories && (
+                          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold"
+                            style={{
+                              backgroundColor: (app.categories.color || '#6366f1') + '15',
+                              color: app.categories.color || '#6366f1'
+                            }}>
+                            <Tag className="h-2.5 w-2.5" />
+                            {app.categories.name}
+                          </span>
+                        )}
+                        {visibleProps.project && app.projects && (
+                          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-bold">
+                            <Folder className="h-2.5 w-2.5" />
+                            {app.projects.name}
+                          </span>
+                        )}
+                        {visibleProps.tags && app.tags?.slice(0, 2).map((tag: string) => (
+                          <span key={tag} className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                   <CardFooter className="pt-0 pb-4 px-5 flex gap-2">
-                    {app.url && (
+                    {visibleProps.url && app.url && (
                       <a href={app.url} target="_blank" rel="noopener noreferrer" className="flex-1">
                         <Button className="w-full gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl h-9 text-sm">
                           <ExternalLink className="h-3.5 w-3.5" />
@@ -523,9 +569,11 @@ export default function DashboardPage() {
               ) : (
                 <div key={app.id} className="group bg-white rounded-xl ring-1 ring-slate-200 p-3 hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 relative">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="text-xl w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 duration-300">
-                      {app.icon || '📱'}
-                    </div>
+                    {visibleProps.icon && (
+                      <div className="text-xl w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 duration-300">
+                        {app.icon || '📱'}
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1 flex flex-col justify-center">
                       <div className="flex items-center gap-2">
                         {editingDisplayName === app.id ? (
@@ -552,23 +600,25 @@ export default function DashboardPage() {
                         {app.display_name && <span className="text-[10px] text-slate-400 font-mono truncate hidden sm:inline">{app.name}</span>}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <button onClick={(e) => {
-                          e.stopPropagation()
-                          const nextStatus: Record<string, string> = { '採用': '保留', '保留': '企画中', '企画中': '採用', '除外': '採用' }
-                          handleQuickStatus(app.id, nextStatus[app.status] || '採用')
-                        }}
-                          className="flex items-center gap-1 hover:bg-slate-100 rounded px-1 -ml-1 py-0.5 transition-colors" title="クリックでステータス切替">
-                          <span className={`w-1.5 h-1.5 rounded-full ${app.status === '採用' ? 'bg-emerald-500' : app.status === '企画中' ? 'bg-amber-400' : app.status === '保留' ? 'bg-slate-400' : 'bg-red-400'}`} />
-                          <span className="text-[11px] text-slate-500 font-medium">{app.status}</span>
-                        </button>
+                        {visibleProps.status && (
+                          <button onClick={(e) => {
+                            e.stopPropagation()
+                            const nextStatus: Record<string, string> = { '採用': '保留', '保留': '企画中', '企画中': '採用', '除外': '採用' }
+                            handleQuickStatus(app.id, nextStatus[app.status] || '採用')
+                          }}
+                            className="flex items-center gap-1 hover:bg-slate-100 rounded px-1 -ml-1 py-0.5 transition-colors" title="クリックでステータス切替">
+                            <span className={`w-1.5 h-1.5 rounded-full ${app.status === '採用' ? 'bg-emerald-500' : app.status === '企画中' ? 'bg-amber-400' : app.status === '保留' ? 'bg-slate-400' : 'bg-red-400'}`} />
+                            <span className="text-[11px] text-slate-500 font-medium">{app.status}</span>
+                          </button>
+                        )}
 
-                        {app.categories && (
+                        {visibleProps.category && app.categories && (
                           <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold" style={{ backgroundColor: (app.categories.color || '#6366f1') + '15', color: app.categories.color || '#6366f1' }}>
                             <Tag className="h-2 w-2" />
                             {app.categories.name}
                           </span>
                         )}
-                        {app.projects && (
+                        {visibleProps.project && app.projects && (
                           <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded-full font-bold hidden sm:inline-flex">
                             <Folder className="h-2 w-2" />
                             {app.projects.name}
@@ -641,6 +691,6 @@ export default function DashboardPage() {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>
-    </div>
+    </div >
   )
 }
