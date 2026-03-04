@@ -3,6 +3,8 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
+import BottomNav from "@/components/BottomNav";
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const dynamic = 'force-dynamic';
@@ -34,7 +36,10 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="ja">
-        <body className={inter.className}>{children}</body>
+        <body className={`${inter.className} pb-16 sm:pb-0 relative min-h-screen`}>
+          {children}
+          <BottomNav />
+        </body>
       </html>
     </ClerkProvider>
   );
