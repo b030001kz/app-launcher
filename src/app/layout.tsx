@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 
 import BottomNav from "@/components/BottomNav";
+import SwipeNavigator from "@/components/SwipeNavigator";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -39,6 +40,7 @@ export default function RootLayout({
         <body className={`${inter.className} pb-16 sm:pb-0 relative min-h-screen`}>
           {children}
           <BottomNav />
+          <SwipeNavigator />
         </body>
       </html>
     </ClerkProvider>

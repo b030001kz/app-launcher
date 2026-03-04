@@ -92,6 +92,10 @@ export type Database = {
                     name: string
                     description: string | null
                     color: string | null
+                    status: string | null
+                    goal: string | null
+                    notes: string | null
+                    due_date: string | null
                     created_at: string
                 }
                 Insert: {
@@ -100,6 +104,10 @@ export type Database = {
                     name: string
                     description?: string | null
                     color?: string | null
+                    status?: string | null
+                    goal?: string | null
+                    notes?: string | null
+                    due_date?: string | null
                     created_at?: string
                 }
                 Update: {
@@ -108,6 +116,10 @@ export type Database = {
                     name?: string
                     description?: string | null
                     color?: string | null
+                    status?: string | null
+                    goal?: string | null
+                    notes?: string | null
+                    due_date?: string | null
                     created_at?: string
                 }
             }
@@ -186,6 +198,35 @@ export type Database = {
                     icon?: string
                     category?: string
                     description?: string | null
+                    created_at?: string
+                }
+            }
+            project_tasks: {
+                Row: {
+                    id: string
+                    project_id: string
+                    user_id: string
+                    title: string
+                    completed: boolean
+                    sort_order: number
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    project_id: string
+                    user_id: string
+                    title: string
+                    completed?: boolean
+                    sort_order?: number
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    project_id?: string
+                    user_id?: string
+                    title?: string
+                    completed?: boolean
+                    sort_order?: number
                     created_at?: string
                 }
             }

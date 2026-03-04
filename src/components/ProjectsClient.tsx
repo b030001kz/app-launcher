@@ -5,26 +5,34 @@ import { Database } from '@/types/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Trash2, ArrowLeft, Folder, Pencil, LayoutGrid, List, Settings2 } from 'lucide-react'
+import { Plus, Trash2, ArrowLeft, Folder, Pencil, LayoutGrid, List, CheckCircle2, Calendar, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 
 type Project = Database['public']['Tables']['projects']['Row']
 
-interface ProjectsClientProps {
-    initialProjects: Project[]
+interface ProjectMeta {
+    taskTotal: number
+    taskDone: number
+    appCount: number
 }
 
-export default function ProjectsClient({ initialProjects }: ProjectsClientProps) {
+interface ProjectsClientProps {
+    initialProjects: Project[]
+    projectMeta: Record<string, ProjectMeta>
+}
+
+const STATUS_COLOR: Record<string, string> = {
+    '計画中': 'bg-amber-100 text-amber-700',
+    '進行中': 'bg-blue-100 text-blue-700',
+    '完了': 'bg-emerald-100 text-emerald-700',
+    '保留': 'bg-slate-100 text-slate-600',
+}
+
+export default function ProjectsClient({ initialProjects, projectMeta }: ProjectsClientProps) {
     const [projects, setProjects] = useState<Project[]>(initialProjects)
     const [showForm, setShowForm] = useState(false)
     const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-    const [showPropertiesMenu, setShowPropertiesMenu] = useState(false)
-    const [visibleProps, setVisibleProps] = useState({
-        color: true,
-        description: true,
-        actions: true,
-    })
     const [formData, setFormData] = useState({ name: '', description: '', color: '#6366f1' })
 
     const handleSave = async () => {
@@ -53,7 +61,9 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
         }
     }
 
-    const startEdit = (project: Project) => {
+    const startEdit = (e: React.MouseEvent, project: Project) => {
+        e.preventDefault()
+        e.stopPropagation()
         setFormData({ name: project.name, description: project.description || '', color: project.color || '#6366f1' })
         setEditingProjectId(project.id)
         setShowForm(true)
@@ -66,8 +76,10 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
         setFormData({ name: '', description: '', color: '#6366f1' })
     }
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('このプロジェクトを削除しますか？紐づくアプリがある場合は注意してください。')) return
+    const handleDelete = async (e: React.MouseEvent, id: string) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (!confirm('このプロジェクトを削除しますか？')) return
         try {
             await fetch(`/api/projects?id=${id}`, { method: 'DELETE' })
             setProjects(prev => prev.filter(p => p.id !== id))
@@ -98,33 +110,6 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                     <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5 relative flex-shrink-0">
                             <button
-                                onClick={() => setShowPropertiesMenu(!showPropertiesMenu)}
-                                className={`p-1.5 rounded-md transition-colors ${showPropertiesMenu ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
-                                title="表示項目の設定"
-                            >
-                                <Settings2 className="h-4 w-4" />
-                            </button>
-                            {/* Properties Dropdown */}
-                            {showPropertiesMenu && (
-                                <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-lg ring-1 ring-slate-200 z-50 p-2 flex flex-col gap-1">
-                                    <div className="text-xs font-bold text-slate-400 px-2 py-1 mb-1">表示する項目</div>
-                                    {Object.entries({
-                                        color: 'カラーラベル', description: '説明文', actions: '操作ボタン'
-                                    }).map(([key, label]) => (
-                                        <label key={key} className="flex items-center gap-2 px-2 py-1 hover:bg-slate-50 rounded-lg cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5"
-                                                checked={visibleProps[key as keyof typeof visibleProps]}
-                                                onChange={(e) => setVisibleProps(prev => ({ ...prev, [key]: e.target.checked }))}
-                                            />
-                                            <span className="text-sm text-slate-700">{label}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            )}
-                            <div className="w-px h-4 bg-slate-200 mx-0.5" />
-                            <button
                                 onClick={() => setViewMode('grid')}
                                 className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
                                 title="カードビュー"
@@ -141,10 +126,8 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                         </div>
                         <Button
                             onClick={() => {
-                                setShowForm(!showForm);
-                                if (showForm) {
-                                    handleCancel()
-                                }
+                                if (showForm) handleCancel()
+                                else setShowForm(true)
                             }}
                             className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-2 h-10 px-4"
                         >
@@ -191,9 +174,9 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                                 </div>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-sm font-bold text-slate-700">説明・目的</label>
+                                <label className="text-sm font-bold text-slate-700">説明</label>
                                 <Input
-                                    placeholder="アプリ群をまとめるためのプロジェクトです..."
+                                    placeholder="プロジェクトの概要..."
                                     className="rounded-xl h-11"
                                     value={formData.description}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
@@ -217,47 +200,115 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                         <p className="text-sm text-slate-500 mt-1">「追加」ボタンから新規プロジェクトを作成してください</p>
                     </div>
                 ) : (
-                    <div className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" : "flex flex-col gap-2"}>
-                        {projects.map(project => (
-                            <div key={project.id} className="relative group">
-                                <div className={`flex items-center bg-white rounded-xl ring-1 ring-slate-200 hover:shadow-lg hover:ring-indigo-200 transition-all duration-200 ${viewMode === 'grid' ? 'gap-3 p-4' : 'gap-4 p-3 pr-20'}`}>
-                                    {visibleProps.color ? (
+                    <div className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" : "flex flex-col gap-3"}>
+                        {projects.map(project => {
+                            const meta = projectMeta[project.id] || { taskTotal: 0, taskDone: 0, appCount: 0 }
+                            const pct = meta.taskTotal > 0 ? Math.round((meta.taskDone / meta.taskTotal) * 100) : 0
+                            const daysLeft = project.due_date
+                                ? Math.ceil((new Date(project.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                                : null
+
+                            return viewMode === 'grid' ? (
+                                <Link key={project.id} href={`/projects/${project.id}`}>
+                                    <div className="relative group bg-white rounded-2xl ring-1 ring-slate-200 hover:shadow-xl hover:ring-indigo-200 transition-all duration-300 p-5 cursor-pointer h-full">
+                                        {/* ステータスバッジ */}
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div
+                                                className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
+                                                style={{ backgroundColor: `${project.color || '#6366f1'}20` }}
+                                            >
+                                                <Folder className="h-5 w-5" style={{ color: project.color || '#6366f1' }} />
+                                            </div>
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${STATUS_COLOR[project.status || '計画中'] || 'bg-slate-100 text-slate-600'}`}>
+                                                {project.status || '計画中'}
+                                            </span>
+                                        </div>
+                                        <h3 className="font-bold text-slate-900 truncate mb-1">{project.name}</h3>
+                                        {project.description && (
+                                            <p className="text-xs text-slate-400 line-clamp-2 mb-3">{project.description}</p>
+                                        )}
+
+                                        {/* メタ情報 */}
+                                        <div className="flex items-center gap-3 text-[11px] text-slate-500 mt-auto pt-3 border-t border-slate-100">
+                                            <span className="flex items-center gap-1">📱 {meta.appCount}個</span>
+                                            {meta.taskTotal > 0 && (
+                                                <span className="flex items-center gap-1">
+                                                    <CheckCircle2 className="h-3 w-3" /> {meta.taskDone}/{meta.taskTotal}
+                                                </span>
+                                            )}
+                                            {daysLeft !== null && (
+                                                <span className={`flex items-center gap-1 ${daysLeft < 0 ? 'text-red-500' : daysLeft <= 7 ? 'text-amber-600' : ''}`}>
+                                                    <Calendar className="h-3 w-3" />
+                                                    {daysLeft < 0 ? `${Math.abs(daysLeft)}日超過` : `残${daysLeft}日`}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* タスク進捗バー */}
+                                        {meta.taskTotal > 0 && (
+                                            <div className="mt-2 w-full bg-slate-100 rounded-full h-1">
+                                                <div
+                                                    className={`h-1 rounded-full transition-all duration-500 ${pct === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`}
+                                                    style={{ width: `${pct}%` }}
+                                                />
+                                            </div>
+                                        )}
+
+                                        {/* ホバー時の操作ボタン */}
+                                        <div className="absolute top-3 right-12 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                onClick={(e) => startEdit(e, project)}
+                                                className="p-1.5 bg-white/80 backdrop-blur-sm hover:bg-slate-50 text-slate-500 rounded-lg shadow-sm ring-1 ring-slate-200"
+                                            >
+                                                <Pencil className="h-3 w-3" />
+                                            </button>
+                                            <button
+                                                onClick={(e) => handleDelete(e, project.id)}
+                                                className="p-1.5 bg-white/80 backdrop-blur-sm hover:bg-red-50 text-red-400 rounded-lg shadow-sm ring-1 ring-slate-200"
+                                            >
+                                                <Trash2 className="h-3 w-3" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </Link>
+                            ) : (
+                                <Link key={project.id} href={`/projects/${project.id}`}>
+                                    <div className="relative group bg-white rounded-xl ring-1 ring-slate-200 hover:shadow-md transition-all p-3 pr-20 flex items-center gap-3 cursor-pointer">
                                         <div
-                                            className={`${viewMode === 'grid' ? 'w-10 h-10' : 'w-8 h-8'} rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm`}
+                                            className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                                             style={{ backgroundColor: `${project.color || '#6366f1'}20` }}
                                         >
-                                            <Folder className="h-5 w-5" style={{ color: project.color || '#6366f1' }} />
+                                            <Folder className="h-4 w-4" style={{ color: project.color || '#6366f1' }} />
                                         </div>
-                                    ) : (
-                                        <div className="w-10 h-10 bg-slate-50 flex items-center justify-center rounded-xl flex-shrink-0">
-                                            <Folder className="h-5 w-5 text-slate-400" />
+                                        <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:gap-4">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <span className="font-bold text-sm text-slate-900 truncate">{project.name}</span>
+                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${STATUS_COLOR[project.status || '計画中'] || 'bg-slate-100 text-slate-600'}`}>
+                                                    {project.status || '計画中'}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-3 text-[11px] text-slate-400">
+                                                <span>📱 {meta.appCount}</span>
+                                                {meta.taskTotal > 0 && <span>{meta.taskDone}/{meta.taskTotal} タスク</span>}
+                                                {daysLeft !== null && (
+                                                    <span className={daysLeft < 0 ? 'text-red-500' : daysLeft <= 7 ? 'text-amber-600' : ''}>
+                                                        {daysLeft < 0 ? `${Math.abs(daysLeft)}日超過` : `残${daysLeft}日`}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                    )}
-                                    <div className={`min-w-0 flex-1 ${viewMode === 'list' ? 'flex flex-col sm:flex-row sm:items-center sm:justify-between sm:gap-4' : ''}`}>
-                                        <p className="font-bold text-sm text-slate-900 truncate">{project.name}</p>
-                                        {visibleProps.description && project.description && (
-                                            <p className={`text-[11px] text-slate-400 truncate ${viewMode === 'list' ? 'sm:text-right' : ''}`}>{project.description}</p>
-                                        )}
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button onClick={(e) => startEdit(e, project)} className="p-1.5 bg-white/80 hover:bg-slate-50 text-slate-500 rounded-lg shadow-sm ring-1 ring-slate-200">
+                                                <Pencil className="h-3 w-3" />
+                                            </button>
+                                            <button onClick={(e) => handleDelete(e, project.id)} className="p-1.5 bg-white/80 hover:bg-red-50 text-red-400 rounded-lg shadow-sm ring-1 ring-slate-200">
+                                                <Trash2 className="h-3 w-3" />
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                                {visibleProps.actions && (
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button
-                                            onClick={() => startEdit(project)}
-                                            className="p-1.5 bg-white/80 backdrop-blur-sm hover:bg-slate-50 text-slate-500 rounded-lg shadow-sm ring-1 ring-slate-200 pointer-events-auto transition-colors"
-                                        >
-                                            <Pencil className="h-3.5 w-3.5" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(project.id)}
-                                            className="p-1.5 bg-white/80 backdrop-blur-sm hover:bg-red-50 text-red-400 rounded-lg shadow-sm ring-1 ring-slate-200 pointer-events-auto transition-colors"
-                                        >
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
+                                </Link>
+                            )
+                        })}
                     </div>
                 )}
             </div>
