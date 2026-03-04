@@ -8,20 +8,20 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-primary: #3b82f6;
+  --color-primary: #4f46e5;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #f1f5f9;
+  --color-secondary: #f8fafc;
   --color-secondary-foreground: #0f172a;
   --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
   --color-muted: #f1f5f9;
   --color-muted-foreground: #64748b;
-  --color-accent: #f1f5f9;
-  --color-accent-foreground: #0f172a;
+  --color-accent: #eef2ff;
+  --color-accent-foreground: #4338ca;
   --color-card: #ffffff;
   --color-card-foreground: #0f172a;
   --color-border: #e2e8f0;
-  --color-input: #e2e8f0;
+  --color-input: #f1f5f9;
   --color-ring: #3b82f6;
   --color-ring-offset-background: #ffffff;
   --font-sans: var(--font-geist-sans);

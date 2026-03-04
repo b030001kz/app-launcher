@@ -42,7 +42,13 @@ export default function DashboardPage() {
     fetchApps()
   }, [isLoaded, isSignedIn])
 
-  const projects = Array.from(new Map(apps.map(app => [app.projects?.id, app.projects] as const).filter((entry): entry is [string, any] => !!entry[0])).values())
+  const projectMap = new Map<string, NonNullable<AppWithRelations['projects']>>()
+  apps.forEach(app => {
+    if (app.projects) {
+      projectMap.set(app.projects.id, app.projects)
+    }
+  })
+  const projects = Array.from(projectMap.values())
 
   const filteredApps = apps.filter(app => {
     const matchesSearch =
