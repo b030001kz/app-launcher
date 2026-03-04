@@ -29,7 +29,7 @@ export default function DashboardPage() {
       try {
         const res = await fetch('/api/apps')
         if (res.ok) {
-          const data = await res.json()
+          const data = (await res.json()) as AppWithRelations[]
           setApps(data)
         }
       } catch (err) {
@@ -42,13 +42,16 @@ export default function DashboardPage() {
     fetchApps()
   }, [isLoaded, isSignedIn])
 
-  const projectMap = new Map<string, NonNullable<AppWithRelations['projects']>>()
-  apps.forEach(app => {
-    if (app.projects) {
-      projectMap.set(app.projects.id, app.projects)
-    }
-  })
-  const projects = Array.from(projectMap.values())
+  const projects = Array.from(
+    apps
+      .reduce((map, app) => {
+        if (app.projects?.id) {
+          map.set(app.projects.id, app.projects)
+        }
+        return map
+      }, new Map<string, NonNullable<AppWithRelations['projects']>>())
+      .values()
+  )
 
   const filteredApps = apps.filter(app => {
     const matchesSearch =
