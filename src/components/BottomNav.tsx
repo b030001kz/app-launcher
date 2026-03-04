@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Wrench, PlusCircle } from 'lucide-react'
+import { Home, Wrench, PlusCircle, Folder } from 'lucide-react'
 
 export default function BottomNav() {
     const pathname = usePathname()
@@ -25,6 +25,12 @@ export default function BottomNav() {
             href: '/tools',
             icon: Wrench,
             isActive: pathname === '/tools'
+        },
+        {
+            name: 'プロジェクト',
+            href: '/projects',
+            icon: Folder,
+            isActive: pathname === '/projects'
         }
     ]
 

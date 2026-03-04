@@ -282,6 +282,12 @@ export default function DashboardClient({ initialApps }: DashboardClientProps) {
                     開発ツール
                   </button>
                 </Link>
+                <Link href="/projects" onClick={() => setSidebarOpen(false)}>
+                  <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-500 hover:bg-slate-50 transition-all">
+                    <Folder className="h-4 w-4 text-slate-400" />
+                    プロジェクト管理
+                  </button>
+                </Link>
               </div>
             </div>
           </nav>
@@ -345,7 +351,7 @@ export default function DashboardClient({ initialApps }: DashboardClientProps) {
                 <option value="created">新しい順</option>
                 <option value="status">ステータス順</option>
               </select>
-              <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5 ml-1 hidden sm:flex relative">
+              <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5 ml-1 relative flex-shrink-0">
                 <button
                   onClick={() => setShowPropertiesMenu(!showPropertiesMenu)}
                   className={`p-1.5 rounded-md transition-colors ${showPropertiesMenu ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}

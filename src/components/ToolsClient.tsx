@@ -120,7 +120,7 @@ export default function ToolsClient({ initialTools }: ToolsClientProps) {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5 hidden sm:flex relative">
+                        <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5 relative flex-shrink-0">
                             <button
                                 onClick={() => setShowPropertiesMenu(!showPropertiesMenu)}
                                 className={`p-1.5 rounded-md transition-colors ${showPropertiesMenu ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
