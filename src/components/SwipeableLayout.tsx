@@ -1,8 +1,8 @@
 'use client'
 
-import { motion, PanInfo, AnimatePresence } from 'framer-motion'
+import { motion, PanInfo, AnimatePresence, useMotionValue, useTransform } from 'framer-motion'
 import { usePathname, useRouter } from 'next/navigation'
-import { ReactNode } from 'react'
+import { ReactNode, useRef } from 'react'
 
 // BottomNavの順序
 const PAGES = ['/', '/tools', '/projects'] as const
@@ -11,21 +11,26 @@ export default function SwipeableLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname()
     const router = useRouter()
     const currentIndex = PAGES.indexOf(pathname as typeof PAGES[number])
+    const isNavigating = useRef(false)
 
     // スワイプ（ドラッグ）終了時の判定
     const handleDragEnd = (e: any, { offset, velocity }: PanInfo) => {
-        if (currentIndex === -1) return // 管理対象外ページでは何もしない
+        if (currentIndex === -1 || isNavigating.current) return
 
-        const swipeThreshold = 50 // 50px以上スワイプしたら遷移
-        const swipeVelocity = 500 // または勢いよくスワイプした場合
+        const swipeThreshold = 80 // 80px以上スワイプしたら遷移
+        const velocityThreshold = 400
 
-        const swipeRight = offset.x > swipeThreshold || velocity.x > swipeVelocity // 左へ戻る
-        const swipeLeft = offset.x < -swipeThreshold || velocity.x < -swipeVelocity // 右へ進む
+        const swipeRight = offset.x > swipeThreshold || velocity.x > velocityThreshold
+        const swipeLeft = offset.x < -swipeThreshold || velocity.x < -velocityThreshold
 
         if (swipeLeft && currentIndex < PAGES.length - 1) {
+            isNavigating.current = true
             router.push(PAGES[currentIndex + 1])
+            setTimeout(() => { isNavigating.current = false }, 500)
         } else if (swipeRight && currentIndex > 0) {
+            isNavigating.current = true
             router.push(PAGES[currentIndex - 1])
+            setTimeout(() => { isNavigating.current = false }, 500)
         }
     }
 
@@ -35,11 +40,11 @@ export default function SwipeableLayout({ children }: { children: ReactNode }) {
             <AnimatePresence mode="popLayout" initial={false}>
                 <motion.div
                     key={pathname}
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="w-full h-full min-h-screen"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.15 }}
+                    className="w-full h-full"
                 >
                     {children}
                 </motion.div>
@@ -53,17 +58,17 @@ export default function SwipeableLayout({ children }: { children: ReactNode }) {
                 key={pathname}
                 // 指の動きに合わせてX軸をドラッグ可能に
                 drag="x"
-                dragConstraints={{ left: 0, right: 0 }} // 放した後に必ず元の位置に戻ろうとする
-                dragElastic={0.4} // 指の動きへの追従度（1で完全追従）
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.9} // 指への追従度を高く
+                dragMomentum={false} // 慣性を無効化して、離した瞬間に反応
                 onDragEnd={handleDragEnd}
 
-                // ページ遷移自体の基本アニメーション
-                initial={{ opacity: 0, x: 20 }}
+                // ページ遷移のアニメーション
+                initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20, transition: { duration: 0.15 } }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="w-full h-full min-h-screen touch-pan-y"
-            // touch-pan-y: 縦スクロールはブラウザ標準に任せる（誤爆防止）
+                exit={{ opacity: 0, x: -30, transition: { duration: 0.12 } }}
+                transition={{ type: "spring", stiffness: 400, damping: 35 }}
+                className="w-full h-full touch-pan-y"
             >
                 {children}
             </motion.div>
