@@ -123,8 +123,8 @@ export default function ProjectDetailClient({ initialProject, initialTasks, init
     }
 
     return (
-        <div className="min-h-screen bg-[#f8fafc]">
-            <div className="max-w-3xl mx-auto px-4 py-6 sm:py-10 pb-24 sm:pb-10 space-y-6">
+        <div className="flex flex-col h-full w-full">
+            <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-[#f8fafc] custom-scrollbar">
                 {/* ヘッダー */}
                 <div className="flex items-start gap-3">
                     <Link href="/projects">
@@ -354,7 +354,7 @@ export default function ProjectDetailClient({ initialProject, initialTasks, init
                         </div>
                     )}
                 </div>
-            </div>
+            </main>
         </div>
     )
 }

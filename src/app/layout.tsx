@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import SwipeableLayout from "@/components/SwipeableLayout";
+import Sidebar from "@/components/Sidebar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -36,10 +37,15 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="ja">
-        <body className={`${inter.className} pb-16 sm:pb-0 relative min-h-screen overflow-x-hidden`}>
-          <SwipeableLayout>
-            {children}
-          </SwipeableLayout>
+        <body className={`${inter.className} pb-16 sm:pb-0 relative min-h-screen overflow-x-hidden bg-[#f8fafc]`}>
+          <div className="flex h-screen overflow-hidden">
+            <Sidebar />
+            <main className="flex-1 overflow-hidden relative">
+              <SwipeableLayout>
+                {children}
+              </SwipeableLayout>
+            </main>
+          </div>
           <BottomNav />
         </body>
       </html>

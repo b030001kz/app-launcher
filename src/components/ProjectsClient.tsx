@@ -5,7 +5,7 @@ import { Database } from '@/types/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Trash2, ArrowLeft, Folder, Pencil, LayoutGrid, List, CheckCircle2, Calendar, ExternalLink } from 'lucide-react'
+import { Plus, Trash2, Folder, Pencil, LayoutGrid, List, CheckCircle2, Calendar, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 
 type Project = Database['public']['Tables']['projects']['Row']
@@ -89,23 +89,16 @@ export default function ProjectsClient({ initialProjects, projectMeta }: Project
     }
 
     return (
-        <div className="min-h-screen bg-[#f8fafc]">
-            <div className="max-w-4xl mx-auto px-4 py-6 sm:py-10 pb-24 sm:pb-10">
+        <div className="flex flex-col h-full w-full">
+            <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#f8fafc] custom-scrollbar">
                 {/* ヘッダー */}
-                <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-3">
-                        <Link href="/">
-                            <button className="p-2 rounded-lg hover:bg-slate-100 transition-colors">
-                                <ArrowLeft className="h-5 w-5 text-slate-600" />
-                            </button>
-                        </Link>
-                        <div>
-                            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                                <Folder className="h-6 w-6 text-indigo-600" />
-                                プロジェクト
-                            </h1>
-                            <p className="text-sm text-slate-500">{projects.length} 個のプロジェクト</p>
-                        </div>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                            <Folder className="h-6 w-6 text-indigo-600" />
+                            プロジェクト
+                        </h1>
+                        <p className="text-sm text-slate-500">{projects.length} 個のプロジェクト</p>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5 relative flex-shrink-0">
@@ -311,7 +304,7 @@ export default function ProjectsClient({ initialProjects, projectMeta }: Project
                         })}
                     </div>
                 )}
-            </div>
+            </main>
         </div>
     )
 }

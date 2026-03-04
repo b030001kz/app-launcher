@@ -6,7 +6,7 @@ import { Database } from '@/types/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, ExternalLink, Trash2, ArrowLeft, Wrench, Pencil, LayoutGrid, List, Settings2 } from 'lucide-react'
+import { Plus, ExternalLink, Trash2, Wrench, Pencil, LayoutGrid, List, Settings2 } from 'lucide-react'
 import Link from 'next/link'
 
 type DevTool = Database['public']['Tables']['dev_tools']['Row']
@@ -101,23 +101,16 @@ export default function ToolsClient({ initialTools }: ToolsClientProps) {
 
 
     return (
-        <div className="min-h-screen bg-[#f8fafc]">
-            <div className="max-w-4xl mx-auto px-4 py-6 sm:py-10">
+        <div className="flex flex-col h-full w-full">
+            <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#f8fafc] custom-scrollbar">
                 {/* ヘッダー */}
-                <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-3">
-                        <Link href="/">
-                            <button className="p-2 rounded-lg hover:bg-slate-100 transition-colors">
-                                <ArrowLeft className="h-5 w-5 text-slate-600" />
-                            </button>
-                        </Link>
-                        <div>
-                            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                                <Wrench className="h-6 w-6 text-indigo-600" />
-                                開発ツール
-                            </h1>
-                            <p className="text-sm text-slate-500">{tools.length} 個のツール・サービスを管理中</p>
-                        </div>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                            <Wrench className="h-6 w-6 text-indigo-600" />
+                            開発ツール
+                        </h1>
+                        <p className="text-sm text-slate-500">{tools.length} 個のツール・サービスを管理中</p>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5 relative flex-shrink-0">
@@ -180,133 +173,137 @@ export default function ToolsClient({ initialTools }: ToolsClientProps) {
                 </div>
 
                 {/* 追加/編集フォーム */}
-                {showForm && (
-                    <Card className="mb-6 border-none shadow-md ring-1 ring-slate-200 rounded-2xl">
-                        <CardHeader className="pb-4">
-                            <CardTitle className="text-lg text-slate-800">{editingToolId ? '開発ツールを編集' : '新しいツールを追加'}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-sm font-bold text-slate-700">サービス名 *</label>
-                                    <Input
-                                        placeholder="例: Vercel"
-                                        className="rounded-xl h-11"
-                                        value={formData.name}
-                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    />
+                {
+                    showForm && (
+                        <Card className="mb-6 border-none shadow-md ring-1 ring-slate-200 rounded-2xl">
+                            <CardHeader className="pb-4">
+                                <CardTitle className="text-lg text-slate-800">{editingToolId ? '開発ツールを編集' : '新しいツールを追加'}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-sm font-bold text-slate-700">サービス名 *</label>
+                                        <Input
+                                            placeholder="例: Vercel"
+                                            className="rounded-xl h-11"
+                                            value={formData.name}
+                                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-sm font-bold text-slate-700">URL *</label>
+                                        <Input
+                                            placeholder="https://vercel.com"
+                                            className="rounded-xl h-11"
+                                            value={formData.url}
+                                            onChange={e => setFormData({ ...formData, url: e.target.value })}
+                                        />
+                                    </div>
                                 </div>
-                                <div className="space-y-1">
-                                    <label className="text-sm font-bold text-slate-700">URL *</label>
-                                    <Input
-                                        placeholder="https://vercel.com"
-                                        className="rounded-xl h-11"
-                                        value={formData.url}
-                                        onChange={e => setFormData({ ...formData, url: e.target.value })}
-                                    />
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-sm font-bold text-slate-700">アイコン</label>
+                                        <Input
+                                            placeholder="🔧"
+                                            className="rounded-xl h-11 text-2xl text-center"
+                                            value={formData.icon}
+                                            onChange={e => setFormData({ ...formData, icon: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-sm font-bold text-slate-700">カテゴリ</label>
+                                        <select
+                                            className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                                            value={formData.category}
+                                            onChange={e => setFormData({ ...formData, category: e.target.value, icon: CATEGORY_ICONS[e.target.value] || formData.icon })}
+                                        >
+                                            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-sm font-bold text-slate-700">メモ</label>
+                                        <Input
+                                            placeholder="用途など"
+                                            className="rounded-xl h-11"
+                                            value={formData.description}
+                                            onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-sm font-bold text-slate-700">アイコン</label>
-                                    <Input
-                                        placeholder="🔧"
-                                        className="rounded-xl h-11 text-2xl text-center"
-                                        value={formData.icon}
-                                        onChange={e => setFormData({ ...formData, icon: e.target.value })}
-                                    />
+                                <div className="flex justify-end gap-2 pt-2">
+                                    <Button variant="outline" className="rounded-xl" onClick={handleCancel}>キャンセル</Button>
+                                    <Button className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-6" onClick={handleSave}>
+                                        {editingToolId ? '保存する' : '追加する'}
+                                    </Button>
                                 </div>
-                                <div className="space-y-1">
-                                    <label className="text-sm font-bold text-slate-700">カテゴリ</label>
-                                    <select
-                                        className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
-                                        value={formData.category}
-                                        onChange={e => setFormData({ ...formData, category: e.target.value, icon: CATEGORY_ICONS[e.target.value] || formData.icon })}
-                                    >
-                                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                                    </select>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-sm font-bold text-slate-700">メモ</label>
-                                    <Input
-                                        placeholder="用途など"
-                                        className="rounded-xl h-11"
-                                        value={formData.description}
-                                        onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex justify-end gap-2 pt-2">
-                                <Button variant="outline" className="rounded-xl" onClick={handleCancel}>キャンセル</Button>
-                                <Button className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-6" onClick={handleSave}>
-                                    {editingToolId ? '保存する' : '追加する'}
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
+                            </CardContent>
+                        </Card>
+                    )
+                }
 
                 {/* カテゴリ別表示 */}
-                {Object.keys(grouped).length === 0 ? (
-                    <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200">
-                        <Wrench className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-                        <h3 className="text-lg font-bold text-slate-900">ツールがまだありません</h3>
-                        <p className="text-sm text-slate-500 mt-1">「追加」ボタンから開発ツールを登録してください</p>
-                    </div>
-                ) : (
-                    <div className="space-y-8">
-                        {Object.entries(grouped).map(([category, categoryTools]) => (
-                            <div key={category}>
-                                <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                    <span>{CATEGORY_ICONS[category] || '📦'}</span>
-                                    {category}
-                                    <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{categoryTools.length}</span>
-                                </h2>
-                                <div className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" : "flex flex-col gap-2"}>
-                                    {categoryTools.map(tool => (
-                                        <div key={tool.id} className="relative group">
-                                            <a
-                                                href={tool.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className={`flex items-center bg-white rounded-xl ring-1 ring-slate-200 hover:shadow-lg hover:ring-indigo-200 transition-all duration-200 pr-20 ${viewMode === 'grid' ? 'gap-3 p-4' : 'gap-4 p-3 sm:pr-24'}`}
-                                            >
-                                                {visibleProps.icon && (
-                                                    <span className={`${viewMode === 'grid' ? 'text-2xl w-10 h-10' : 'text-xl w-8 h-8'} bg-slate-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0`}>
-                                                        {tool.icon}
-                                                    </span>
-                                                )}
-                                                <div className={`min-w-0 flex-1 ${viewMode === 'list' ? 'flex flex-col sm:flex-row sm:items-center sm:justify-between sm:gap-4' : ''}`}>
-                                                    <p className="font-bold text-sm text-slate-900 truncate">{tool.name}</p>
-                                                    {visibleProps.description && tool.description && (
-                                                        <p className={`text-[11px] text-slate-400 truncate ${viewMode === 'list' ? 'sm:text-right' : ''}`}>{tool.description}</p>
+                {
+                    Object.keys(grouped).length === 0 ? (
+                        <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200">
+                            <Wrench className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                            <h3 className="text-lg font-bold text-slate-900">ツールがまだありません</h3>
+                            <p className="text-sm text-slate-500 mt-1">「追加」ボタンから開発ツールを登録してください</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-8">
+                            {Object.entries(grouped).map(([category, categoryTools]) => (
+                                <div key={category}>
+                                    <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                        <span>{CATEGORY_ICONS[category] || '📦'}</span>
+                                        {category}
+                                        <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{categoryTools.length}</span>
+                                    </h2>
+                                    <div className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" : "flex flex-col gap-2"}>
+                                        {categoryTools.map(tool => (
+                                            <div key={tool.id} className="relative group">
+                                                <a
+                                                    href={tool.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className={`flex items-center bg-white rounded-xl ring-1 ring-slate-200 hover:shadow-lg hover:ring-indigo-200 transition-all duration-200 pr-20 ${viewMode === 'grid' ? 'gap-3 p-4' : 'gap-4 p-3 sm:pr-24'}`}
+                                                >
+                                                    {visibleProps.icon && (
+                                                        <span className={`${viewMode === 'grid' ? 'text-2xl w-10 h-10' : 'text-xl w-8 h-8'} bg-slate-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0`}>
+                                                            {tool.icon}
+                                                        </span>
                                                     )}
-                                                </div>
-                                            </a>
-                                            {visibleProps.actions && (
-                                                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button
-                                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); startEdit(tool) }}
-                                                        className="p-1.5 bg-white/80 backdrop-blur-sm hover:bg-slate-50 text-slate-500 rounded-lg shadow-sm ring-1 ring-slate-200 pointer-events-auto transition-colors"
-                                                    >
-                                                        <Pencil className="h-3.5 w-3.5" />
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(tool.id) }}
-                                                        className="p-1.5 bg-white/80 backdrop-blur-sm hover:bg-red-50 text-red-400 rounded-lg shadow-sm ring-1 ring-slate-200 pointer-events-auto transition-colors"
-                                                    >
-                                                        <Trash2 className="h-3.5 w-3.5" />
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
+                                                    <div className={`min-w-0 flex-1 ${viewMode === 'list' ? 'flex flex-col sm:flex-row sm:items-center sm:justify-between sm:gap-4' : ''}`}>
+                                                        <p className="font-bold text-sm text-slate-900 truncate">{tool.name}</p>
+                                                        {visibleProps.description && tool.description && (
+                                                            <p className={`text-[11px] text-slate-400 truncate ${viewMode === 'list' ? 'sm:text-right' : ''}`}>{tool.description}</p>
+                                                        )}
+                                                    </div>
+                                                </a>
+                                                {visibleProps.actions && (
+                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); startEdit(tool) }}
+                                                            className="p-1.5 bg-white/80 backdrop-blur-sm hover:bg-slate-50 text-slate-500 rounded-lg shadow-sm ring-1 ring-slate-200 pointer-events-auto transition-colors"
+                                                        >
+                                                            <Pencil className="h-3.5 w-3.5" />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(tool.id) }}
+                                                            className="p-1.5 bg-white/80 backdrop-blur-sm hover:bg-red-50 text-red-400 rounded-lg shadow-sm ring-1 ring-slate-200 pointer-events-auto transition-colors"
+                                                        >
+                                                            <Trash2 className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </div>
+                            ))}
+                        </div>
+                    )
+                }
+            </main >
+        </div >
     )
 }
