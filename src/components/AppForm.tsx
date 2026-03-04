@@ -59,7 +59,7 @@ export default function AppForm({ initialData, isEditing = false }: AppFormProps
         setLoading(true)
         setError(null)
 
-        const tagsArray = formData.tags.split(',').map(tag => tag.trim()).filter(Boolean)
+        const tagsArray = formData.tags.split(',').map((tag: string) => tag.trim()).filter(Boolean)
         const payload = {
             name: formData.name,
             display_name: formData.display_name || null,
