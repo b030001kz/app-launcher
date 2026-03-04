@@ -6,12 +6,13 @@ import { Database } from '@/types/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Search, ExternalLink, Settings, Folder, Tag, LayoutGrid, Menu, X, Pencil, StickyNote, ArrowUpDown } from 'lucide-react'
+import { Plus, Search, ExternalLink, Settings, Folder, Tag, LayoutGrid, Menu, X, Pencil, StickyNote, ArrowUpDown, Wrench, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 
 type AppWithRelations = Database['public']['Tables']['apps']['Row'] & {
   categories: Database['public']['Tables']['categories']['Row'] | null
   projects: Database['public']['Tables']['projects']['Row'] | null
+  app_tasks: Database['public']['Tables']['app_tasks']['Row'][] | null
 }
 
 type Category = Database['public']['Tables']['categories']['Row']
@@ -273,6 +274,12 @@ export default function DashboardPage() {
                     Vercel同期
                   </button>
                 </Link>
+                <Link href="/tools" onClick={() => setSidebarOpen(false)}>
+                  <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-500 hover:bg-slate-50 transition-all">
+                    <Wrench className="h-4 w-4 text-slate-400" />
+                    開発ツール
+                  </button>
+                </Link>
               </div>
             </div>
           </nav>
@@ -409,8 +416,8 @@ export default function DashboardPage() {
                             title="クリックでステータス切替"
                           >
                             <span className={`w-1.5 h-1.5 rounded-full ${app.status === '採用' ? 'bg-emerald-500'
-                                : app.status === '企画中' ? 'bg-amber-400'
-                                  : app.status === '保留' ? 'bg-slate-400' : 'bg-red-400'
+                              : app.status === '企画中' ? 'bg-amber-400'
+                                : app.status === '保留' ? 'bg-slate-400' : 'bg-red-400'
                               }`} />
                             <span className="text-[11px] text-slate-500 font-medium">{app.status}</span>
                           </button>
@@ -432,6 +439,29 @@ export default function DashboardPage() {
                       </p>
                     </div>
                   )}
+                  {/* タスク進捗 */}
+                  {app.app_tasks && app.app_tasks.length > 0 && (() => {
+                    const total = app.app_tasks!.length
+                    const done = app.app_tasks!.filter(t => t.completed).length
+                    const pct = Math.round((done / total) * 100)
+                    return (
+                      <div className="mt-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                            <CheckCircle2 className="h-3 w-3" />
+                            {done}/{total} タスク完了
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-bold">{pct}%</span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-1.5">
+                          <div
+                            className={`h-1.5 rounded-full transition-all duration-500 ${pct === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })()}
                   <div className="flex flex-wrap gap-1.5 mt-3">
                     {app.categories && (
                       <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold"

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChevronLeft, Trash2, Save, Plus, Tag, Folder } from 'lucide-react'
 import Link from 'next/link'
+import TaskList from '@/components/TaskList'
 
 type AppStatus = Database['public']['Tables']['apps']['Row']['status']
 
@@ -301,6 +302,17 @@ export default function AppForm({ initialData, isEditing = false }: AppFormProps
                     </form>
                 </Card>
             </div>
+
+            {/* タスクセクション（編集時のみ） */}
+            {isEditing && initialData?.id && (
+                <div className="max-w-2xl mx-auto">
+                    <Card className="border-none shadow-sm ring-1 ring-slate-200 rounded-2xl">
+                        <CardContent className="pt-6">
+                            <TaskList appId={initialData.id} />
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
         </div>
     )
 }

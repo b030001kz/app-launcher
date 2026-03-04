@@ -14,7 +14,7 @@ export async function GET() {
         const supabase = getSupabaseAdmin()
         const { data, error } = await supabase
             .from('apps')
-            .select('*, categories(*), projects(*)')
+            .select('*, categories(*), projects(*), app_tasks(*)')
             .eq('user_id', userId)
             .order('sort_order', { ascending: true })
 

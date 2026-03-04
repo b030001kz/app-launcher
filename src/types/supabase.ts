@@ -128,6 +128,67 @@ export type Database = {
                     created_at?: string
                 }
             }
+            app_tasks: {
+                Row: {
+                    id: string
+                    app_id: string
+                    user_id: string
+                    title: string
+                    completed: boolean
+                    sort_order: number
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    app_id: string
+                    user_id: string
+                    title: string
+                    completed?: boolean
+                    sort_order?: number
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    app_id?: string
+                    user_id?: string
+                    title?: string
+                    completed?: boolean
+                    sort_order?: number
+                    created_at?: string
+                }
+            }
+            dev_tools: {
+                Row: {
+                    id: string
+                    user_id: string
+                    name: string
+                    url: string
+                    icon: string
+                    category: string
+                    description: string | null
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    name: string
+                    url: string
+                    icon?: string
+                    category?: string
+                    description?: string | null
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    name?: string
+                    url?: string
+                    icon?: string
+                    category?: string
+                    description?: string | null
+                    created_at?: string
+                }
+            }
         }
         Views: {
             [_ in never]: never
