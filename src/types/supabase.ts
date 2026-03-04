@@ -21,8 +21,9 @@ export type Database = {
                     tags: string[] | null
                     category_id: string | null
                     project_id: string | null
-                    status: '採用' | '保留' | '除外'
+                    status: '採用' | '保留' | '除外' | '企画中'
                     sort_order: number
+                    notes: string | null
                     created_at: string
                     updated_at: string
                 }
@@ -37,8 +38,9 @@ export type Database = {
                     tags?: string[] | null
                     category_id?: string | null
                     project_id?: string | null
-                    status?: '採用' | '保留' | '除外'
+                    status?: '採用' | '保留' | '除外' | '企画中'
                     sort_order?: number
+                    notes?: string | null
                     created_at?: string
                     updated_at?: string
                 }
@@ -55,6 +57,7 @@ export type Database = {
                     project_id?: string | null
                     status?: '採用' | '保留' | '除外'
                     sort_order?: number
+                    notes?: string | null
                     created_at?: string
                     updated_at?: string
                 }
@@ -133,7 +136,7 @@ export type Database = {
             [_ in never]: never
         }
         Enums: {
-            app_status: '採用' | '保留' | '除外'
+            app_status: '採用' | '保留' | '除外' | '企画中'
         }
     }
 }

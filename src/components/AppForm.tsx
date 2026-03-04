@@ -36,7 +36,8 @@ export default function AppForm({ initialData, isEditing = false }: AppFormProps
         status: (initialData?.status || '採用') as AppStatus,
         sort_order: initialData?.sort_order || 0,
         category_id: initialData?.category_id || '',
-        project_id: initialData?.project_id || ''
+        project_id: initialData?.project_id || '',
+        notes: initialData?.notes || ''
     })
 
     useEffect(() => {
@@ -70,7 +71,8 @@ export default function AppForm({ initialData, isEditing = false }: AppFormProps
             status: formData.status,
             sort_order: formData.sort_order,
             category_id: formData.category_id || null,
-            project_id: formData.project_id || null
+            project_id: formData.project_id || null,
+            notes: formData.notes || null
         }
 
         try {
@@ -247,6 +249,18 @@ export default function AppForm({ initialData, isEditing = false }: AppFormProps
                                 />
                             </div>
 
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                                    💡 企画メモ <span className="text-xs text-slate-400 font-normal">（アイデアや次のステップなど）</span>
+                                </label>
+                                <textarea
+                                    className="flex min-h-[120px] w-full rounded-xl border border-slate-200 bg-amber-50/50 px-3 py-2 text-sm focus:ring-2 focus:ring-amber-400 outline-none transition-all"
+                                    value={formData.notes}
+                                    onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                    placeholder="例: 次はユーザー認証を追加する。デザインはFigmaのリンクを参照。APIはOpenAIを使う予定。"
+                                />
+                            </div>
+
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-slate-700">ステータス</label>
@@ -255,9 +269,10 @@ export default function AppForm({ initialData, isEditing = false }: AppFormProps
                                         value={formData.status}
                                         onChange={e => setFormData({ ...formData, status: e.target.value as AppStatus })}
                                     >
-                                        <option value="採用">✅ Launch</option>
-                                        <option value="保留">⏸️ Wait</option>
-                                        <option value="除外">🚫 Archive</option>
+                                        <option value="採用">✅ 採用（公開中）</option>
+                                        <option value="保留">⏸️ 保留</option>
+                                        <option value="企画中">💡 企画中</option>
+                                        <option value="除外">🚫 除外</option>
                                     </select>
                                 </div>
                                 <div className="space-y-2">

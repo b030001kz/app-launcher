@@ -19,8 +19,9 @@ export default function DashboardPage() {
   const [apps, setApps] = useState<AppWithRelations[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'全て' | '採用' | '保留' | '除外'>('全て')
+  const [statusFilter, setStatusFilter] = useState<'全て' | '採用' | '保留' | '除外' | '企画中'>('全て')
   const [selectedProjectId, setSelectedProjectId] = useState<string | 'all'>('all')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return
@@ -78,9 +79,24 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col sm:flex-row">
-      {/* Dynamic Sidebar */}
-      <aside className="w-full sm:w-64 bg-white border-r border-slate-200 flex-shrink-0">
-        <div className="p-6">
+      {/* モバイルヘッダー */}
+      <div className="sm:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 rounded-lg hover:bg-slate-100">
+          <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+        </button>
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center">
+            <span className="text-white text-xs font-bold">A</span>
+          </div>
+          <h1 className="text-base font-bold text-slate-800">App Launcher</h1>
+        </div>
+        <UserButton afterSignOutUrl="/sign-in" appearance={{ elements: { avatarBox: 'w-8 h-8' } }} />
+      </div>
+
+      {/* サイドバー（モバイルではドロワー） */}
+      <aside className={`${sidebarOpen ? 'block' : 'hidden'} sm:block w-full sm:w-64 bg-white border-r border-slate-200 flex-shrink-0 ${sidebarOpen ? 'fixed inset-0 z-50 sm:relative' : ''}`}>
+        {sidebarOpen && <div className="sm:hidden absolute inset-0 bg-black/20" onClick={() => setSidebarOpen(false)} />}
+        <div className={`relative z-10 bg-white ${sidebarOpen ? 'w-72 h-full' : ''} p-6`}>
           <div className="flex items-center gap-3 mb-8">
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-200">
               <span className="text-white text-sm font-bold">A</span>
@@ -171,27 +187,27 @@ export default function DashboardPage() {
                 {filteredApps.length} 個のアプリケーションが見つかりました
               </p>
             </div>
-            <div className="flex gap-1.5 p-1 bg-slate-200/50 rounded-xl">
-              {(['全て', '採用', '保留'] as const).map(status => (
+            <div className="flex gap-1.5 p-1 bg-slate-200/50 rounded-xl overflow-x-auto no-scrollbar">
+              {(['全て', '採用', '企画中', '保留'] as const).map(status => (
                 <button
                   key={status}
                   onClick={() => setStatusFilter(status)}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${statusFilter === status
-                    ? 'bg-white text-indigo-600 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${statusFilter === status
+                      ? status === '企画中' ? 'bg-white text-amber-600 shadow-sm' : 'bg-white text-indigo-600 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
                     }`}
                 >
-                  {status}
+                  {status === '企画中' ? '💡企画中' : status}
                 </button>
               ))}
               <button
                 onClick={() => setStatusFilter('除外')}
-                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${statusFilter === '除外'
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${statusFilter === '除外'
                   ? 'bg-white text-red-600 shadow-sm'
                   : 'text-slate-500 hover:text-slate-700'
                   }`}
               >
-                Archive
+                除外
               </button>
             </div>
           </div>
@@ -211,8 +227,8 @@ export default function DashboardPage() {
                           <p className="text-[10px] text-slate-400 font-mono truncate">{app.name}</p>
                         )}
                         <div className="flex items-center gap-1.5 mt-1">
-                          <span className={`w-1.5 h-1.5 rounded-full ${app.status === '採用' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                          <span className="text-[11px] text-slate-500 font-medium uppercase tracking-wider">{app.status}</span>
+                          <span className={`w-1.5 h-1.5 rounded-full ${app.status === '採用' ? 'bg-emerald-500' : app.status === '企画中' ? 'bg-amber-400' : app.status === '保留' ? 'bg-slate-400' : 'bg-red-400'}`} />
+                          <span className="text-[11px] text-slate-500 font-medium">{app.status}</span>
                         </div>
                       </div>
                     </div>

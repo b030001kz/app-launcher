@@ -54,10 +54,11 @@ export async function createApp(formData: {
     icon: string
     description: string
     tags: string[]
-    status: '採用' | '保留' | '除外'
+    status: '採用' | '保留' | '除外' | '企画中'
     sort_order: number
     category_id?: string | null
     project_id?: string | null
+    notes?: string | null
 }) {
     try {
         const { userId } = await auth()
@@ -83,10 +84,11 @@ export async function updateApp(id: string, formData: {
     icon: string
     description: string
     tags: string[]
-    status: '採用' | '保留' | '除外'
+    status: '採用' | '保留' | '除外' | '企画中'
     sort_order: number
     category_id?: string | null
     project_id?: string | null
+    notes?: string | null
 }) {
     try {
         const { userId } = await auth()
@@ -204,7 +206,7 @@ export async function importVercelApps(apps: {
     icon: string
     description: string
     tags: string[]
-    status: '採用' | '保留' | '除外'
+    status: '採用' | '保留' | '除外' | '企画中'
     sort_order: number
     category_id?: string | null
     project_id?: string | null
@@ -216,7 +218,21 @@ export async function importVercelApps(apps: {
         const supabase = getSupabaseAdmin()
         if (!supabase) throw new Error('Supabase admin client could not be initialized.')
 
-        const payload = apps.map(app => ({
+        // 既存アプリを取得して名前で重複チェック
+        const { data: existingApps } = await supabase
+            .from('apps')
+            .select('id, name')
+            .eq('user_id', userId)
+
+        const existingNames = new Set((existingApps || []).map((a: { name: string }) => a.name))
+        const newApps = apps.filter((app: { name: string }) => !existingNames.has(app.name))
+
+        if (newApps.length === 0) {
+            revalidatePath('/')
+            return { success: true, added: 0, skipped: apps.length }
+        }
+
+        const payload = newApps.map(app => ({
             ...app,
             user_id: userId
         }))
@@ -231,7 +247,7 @@ export async function importVercelApps(apps: {
         }
 
         revalidatePath('/')
-        return { success: true }
+        return { success: true, added: newApps.length, skipped: apps.length - newApps.length }
     } catch (err: any) {
         console.error('importVercelApps error:', err)
         throw new Error(err.message || 'インポート中に不明なエラーが発生しました')
