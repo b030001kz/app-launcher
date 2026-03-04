@@ -6,7 +6,7 @@ import { Database } from '@/types/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, ExternalLink, Trash2, ArrowLeft, Wrench, Pencil, LayoutGrid, List } from 'lucide-react'
+import { Plus, ExternalLink, Trash2, ArrowLeft, Wrench, Pencil, LayoutGrid, List, Settings2 } from 'lucide-react'
 import Link from 'next/link'
 
 type DevTool = Database['public']['Tables']['dev_tools']['Row']
@@ -27,6 +27,12 @@ export default function ToolsPage() {
     const [showForm, setShowForm] = useState(false)
     const [editingToolId, setEditingToolId] = useState<string | null>(null)
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+    const [showPropertiesMenu, setShowPropertiesMenu] = useState(false)
+    const [visibleProps, setVisibleProps] = useState({
+        icon: true,
+        description: true,
+        actions: true,
+    })
     const [formData, setFormData] = useState({ name: '', url: '', icon: '🔧', category: 'その他', description: '' })
 
     useEffect(() => {
@@ -130,7 +136,34 @@ export default function ToolsPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5 hidden sm:flex">
+                        <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5 hidden sm:flex relative">
+                            <button
+                                onClick={() => setShowPropertiesMenu(!showPropertiesMenu)}
+                                className={`p-1.5 rounded-md transition-colors ${showPropertiesMenu ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                title="表示項目の設定"
+                            >
+                                <Settings2 className="h-4 w-4" />
+                            </button>
+                            {/* Properties Dropdown */}
+                            {showPropertiesMenu && (
+                                <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-lg ring-1 ring-slate-200 z-50 p-2 flex flex-col gap-1">
+                                    <div className="text-xs font-bold text-slate-400 px-2 py-1 mb-1">表示する項目</div>
+                                    {Object.entries({
+                                        icon: 'アイコン', description: '説明文', actions: '操作ボタン'
+                                    }).map(([key, label]) => (
+                                        <label key={key} className="flex items-center gap-2 px-2 py-1 hover:bg-slate-50 rounded-lg cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5"
+                                                checked={visibleProps[key as keyof typeof visibleProps]}
+                                                onChange={(e) => setVisibleProps(prev => ({ ...prev, [key]: e.target.checked }))}
+                                            />
+                                            <span className="text-sm text-slate-700">{label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                            <div className="w-px h-4 bg-slate-200 mx-0.5" />
                             <button
                                 onClick={() => setViewMode('grid')}
                                 className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
@@ -254,30 +287,34 @@ export default function ToolsPage() {
                                                 rel="noopener noreferrer"
                                                 className={`flex items-center bg-white rounded-xl ring-1 ring-slate-200 hover:shadow-lg hover:ring-indigo-200 transition-all duration-200 pr-20 ${viewMode === 'grid' ? 'gap-3 p-4' : 'gap-4 p-3 sm:pr-24'}`}
                                             >
-                                                <span className={`${viewMode === 'grid' ? 'text-2xl w-10 h-10' : 'text-xl w-8 h-8'} bg-slate-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0`}>
-                                                    {tool.icon}
-                                                </span>
+                                                {visibleProps.icon && (
+                                                    <span className={`${viewMode === 'grid' ? 'text-2xl w-10 h-10' : 'text-xl w-8 h-8'} bg-slate-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0`}>
+                                                        {tool.icon}
+                                                    </span>
+                                                )}
                                                 <div className={`min-w-0 flex-1 ${viewMode === 'list' ? 'flex flex-col sm:flex-row sm:items-center sm:justify-between sm:gap-4' : ''}`}>
                                                     <p className="font-bold text-sm text-slate-900 truncate">{tool.name}</p>
-                                                    {tool.description && (
+                                                    {visibleProps.description && tool.description && (
                                                         <p className={`text-[11px] text-slate-400 truncate ${viewMode === 'list' ? 'sm:text-right' : ''}`}>{tool.description}</p>
                                                     )}
                                                 </div>
                                             </a>
-                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); startEdit(tool) }}
-                                                    className="p-1.5 bg-white/80 backdrop-blur-sm hover:bg-slate-50 text-slate-500 rounded-lg shadow-sm ring-1 ring-slate-200 pointer-events-auto transition-colors"
-                                                >
-                                                    <Pencil className="h-3.5 w-3.5" />
-                                                </button>
-                                                <button
-                                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(tool.id) }}
-                                                    className="p-1.5 bg-white/80 backdrop-blur-sm hover:bg-red-50 text-red-400 rounded-lg shadow-sm ring-1 ring-slate-200 pointer-events-auto transition-colors"
-                                                >
-                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                </button>
-                                            </div>
+                                            {visibleProps.actions && (
+                                                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); startEdit(tool) }}
+                                                        className="p-1.5 bg-white/80 backdrop-blur-sm hover:bg-slate-50 text-slate-500 rounded-lg shadow-sm ring-1 ring-slate-200 pointer-events-auto transition-colors"
+                                                    >
+                                                        <Pencil className="h-3.5 w-3.5" />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(tool.id) }}
+                                                        className="p-1.5 bg-white/80 backdrop-blur-sm hover:bg-red-50 text-red-400 rounded-lg shadow-sm ring-1 ring-slate-200 pointer-events-auto transition-colors"
+                                                    >
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
