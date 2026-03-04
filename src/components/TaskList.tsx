@@ -54,7 +54,7 @@ export default function TaskList({ appId }: TaskListProps) {
         }
     }
 
-    // 完了トグル
+    // 完亁E��グル
     const handleToggle = async (taskId: string, completed: boolean) => {
         setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: !completed } : t))
         try {
@@ -94,7 +94,7 @@ export default function TaskList({ appId }: TaskListProps) {
                     📋 タスク
                     {tasks.length > 0 && (
                         <span className="text-xs text-slate-400 font-normal">
-                            {completedCount}/{tasks.length} 完了 ({progress}%)
+                            {completedCount}/{tasks.length} 完亁E({progress}%)
                         </span>
                     )}
                 </h3>
@@ -110,7 +110,7 @@ export default function TaskList({ appId }: TaskListProps) {
                 </div>
             )}
 
-            {/* タスクリスト */}
+            {/* タスクリスチE*/}
             <div className="space-y-1">
                 {tasks.map(task => (
                     <div
@@ -137,7 +137,7 @@ export default function TaskList({ appId }: TaskListProps) {
                 ))}
             </div>
 
-            {/* 新規タスク入力 */}
+            {/* 新規タスク入劁E*/}
             <div className="flex gap-2">
                 <Input
                     placeholder="新しいタスクを追加..."

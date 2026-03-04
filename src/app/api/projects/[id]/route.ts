@@ -2,8 +2,6 @@ import { auth } from '@clerk/nextjs/server'
 import { getSupabaseAdmin } from '@/lib/supabase-server'
 import { NextResponse, NextRequest } from 'next/server'
 
-export const dynamic = 'force-dynamic'
-
 // プロジェクト詳細取得（タスク + 紐づきアプリ含む）
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const { userId } = await auth()

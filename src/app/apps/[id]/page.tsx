@@ -6,7 +6,7 @@ import { auth } from '@clerk/nextjs/server'
 import { Suspense } from 'react'
 import DashboardLoading from '../../loading' // appsディレクトリのloadingがないためトップレベルから流用
 
-export const dynamic = 'force-dynamic'
+
 
 interface EditAppPageProps {
     params: Promise<{ id: string }>

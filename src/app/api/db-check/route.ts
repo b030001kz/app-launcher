@@ -1,7 +1,6 @@
 import { getSupabaseAdmin } from '@/lib/supabase-server'
 import { NextResponse } from 'next/server'
 
-export const dynamic = 'force-dynamic'
 
 // 一時的なマイグレーションAPI（実行後に削除すること）
 export async function GET() {

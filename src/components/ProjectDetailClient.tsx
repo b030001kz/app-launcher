@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Database } from '@/types/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,25 +22,38 @@ type LinkedApp = {
 }
 
 interface ProjectDetailClientProps {
-    initialProject: Project
-    initialTasks: ProjectTask[]
-    initialApps: LinkedApp[]
+    projectId: string
 }
 
 const STATUS_OPTIONS = ['計画中', '進行中', '完了', '保留'] as const
 
-export default function ProjectDetailClient({ initialProject, initialTasks, initialApps }: ProjectDetailClientProps) {
-    const [project, setProject] = useState<Project>(initialProject)
-    const [tasks, setTasks] = useState<ProjectTask[]>(initialTasks)
-    const [apps] = useState<LinkedApp[]>(initialApps)
+export default function ProjectDetailClient({ projectId }: ProjectDetailClientProps) {
+    const [project, setProject] = useState<Project | null>(null)
+    const [tasks, setTasks] = useState<ProjectTask[]>([])
+    const [apps, setApps] = useState<LinkedApp[]>([])
     const [newTaskTitle, setNewTaskTitle] = useState('')
+    const [loading, setLoading] = useState(true)
 
     // インライン編集用
     const [editingField, setEditingField] = useState<string | null>(null)
     const [tempValue, setTempValue] = useState('')
 
+    // クライアントサイドでデータ取得
+    useEffect(() => {
+        fetch(`/api/projects/${projectId}`)
+            .then(r => r.json())
+            .then(data => {
+                setProject(data.project)
+                setTasks(data.tasks || [])
+                setApps(data.apps || [])
+                setLoading(false)
+            })
+            .catch(() => setLoading(false))
+    }, [projectId])
+
     // プロジェクト情報の更新
     const updateProject = async (updates: Partial<Project>) => {
+        if (!project) return
         try {
             const res = await fetch(`/api/projects/${project.id}`, {
                 method: 'PATCH',
@@ -64,7 +77,7 @@ export default function ProjectDetailClient({ initialProject, initialTasks, init
 
     // タスク追加
     const addTask = async () => {
-        if (!newTaskTitle.trim()) return
+        if (!newTaskTitle.trim() || !project) return
         try {
             const res = await fetch('/api/project-tasks', {
                 method: 'POST',
@@ -111,7 +124,7 @@ export default function ProjectDetailClient({ initialProject, initialTasks, init
     const progressPct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
 
     // 期限までの残り日数
-    const daysLeft = project.due_date
+    const daysLeft = project?.due_date
         ? Math.ceil((new Date(project.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
         : null
 
@@ -120,6 +133,14 @@ export default function ProjectDetailClient({ initialProject, initialTasks, init
         '進行中': 'bg-blue-100 text-blue-700',
         '完了': 'bg-emerald-100 text-emerald-700',
         '保留': 'bg-slate-100 text-slate-600',
+    }
+
+    if (loading || !project) {
+        return (
+            <div className="flex flex-col h-full w-full items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+            </div>
+        )
     }
 
     return (

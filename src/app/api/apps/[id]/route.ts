@@ -2,7 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { getSupabaseAdmin } from '@/lib/supabase-server'
 import { NextResponse } from 'next/server'
 
-export const dynamic = 'force-dynamic'
+
 
 // アプリの部分更新（表示名のインライン編集など）
 export async function PATCH(

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Database } from '@/types/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,11 +16,6 @@ interface ProjectMeta {
     appCount: number
 }
 
-interface ProjectsClientProps {
-    initialProjects: Project[]
-    projectMeta: Record<string, ProjectMeta>
-}
-
 const STATUS_COLOR: Record<string, string> = {
     '計画中': 'bg-amber-100 text-amber-700',
     '進行中': 'bg-blue-100 text-blue-700',
@@ -28,12 +23,31 @@ const STATUS_COLOR: Record<string, string> = {
     '保留': 'bg-slate-100 text-slate-600',
 }
 
-export default function ProjectsClient({ initialProjects, projectMeta }: ProjectsClientProps) {
-    const [projects, setProjects] = useState<Project[]>(initialProjects)
+export default function ProjectsClient() {
+    const [projects, setProjects] = useState<Project[]>([])
+    const [projectMeta, setProjectMeta] = useState<Record<string, ProjectMeta>>({})
+    const [loading, setLoading] = useState(true)
     const [showForm, setShowForm] = useState(false)
     const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
     const [formData, setFormData] = useState({ name: '', description: '', color: '#6366f1' })
+
+    // クライアントサイドでデータ取得
+    useEffect(() => {
+        fetch('/api/projects')
+            .then(r => r.json())
+            .then((data: any) => {
+                if (data.projects) {
+                    setProjects(data.projects)
+                    setProjectMeta(data.meta || {})
+                } else if (Array.isArray(data)) {
+                    setProjects(data)
+                }
+                setLoading(false)
+            })
+            .catch(() => setLoading(false))
+    }, [])
+
 
     const handleSave = async () => {
         if (!formData.name) return

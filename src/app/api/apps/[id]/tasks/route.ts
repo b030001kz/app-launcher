@@ -2,7 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { getSupabaseAdmin } from '@/lib/supabase-server'
 import { NextResponse } from 'next/server'
 
-export const dynamic = 'force-dynamic'
+
 
 // タスク一覧取得
 export async function GET(

@@ -21,14 +21,10 @@ type Project = Database['public']['Tables']['projects']['Row']
 type StatusType = '全て' | '採用' | '保留' | '除外' | '企画中'
 type SortType = 'name' | 'created' | 'status'
 
-interface DashboardClientProps {
-  initialApps: AppWithRelations[]
-}
-
-export default function DashboardClient({ initialApps }: DashboardClientProps) {
+export default function DashboardClient() {
   const { isLoaded, isSignedIn } = useUser()
-  const [apps, setApps] = useState<AppWithRelations[]>(initialApps)
-  const [loading, setLoading] = useState(false)
+  const [apps, setApps] = useState<AppWithRelations[]>([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusType>('全て')
   const searchParams = useSearchParams()
@@ -53,9 +49,13 @@ export default function DashboardClient({ initialApps }: DashboardClientProps) {
   const [tempDisplayName, setTempDisplayName] = useState('')
 
 
-
-  // Server Component側で認証状態が確保されるため、ここでのクライアントフェッチを削除
-  // 必要に応じて再フェッチ（ブラウザ更新せず最新化）する場合は残すが、一旦シンプルにするため削除
+  // クライアントサイドでデータ取得
+  useEffect(() => {
+    fetch('/api/apps')
+      .then(r => r.json())
+      .then(data => { setApps(Array.isArray(data) ? data : []); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
 
   // プロジェクト一覧抽出
   const projects = Array.from(

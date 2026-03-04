@@ -20,14 +20,10 @@ const CATEGORY_ICONS: Record<string, string> = {
     'CI/CD': '⚙️', 'API': '🔗', '分析': '📊', 'コミュニケーション': '💬', 'その他': '🔧'
 }
 
-interface ToolsClientProps {
-    initialTools: DevTool[]
-}
-
-export default function ToolsClient({ initialTools }: ToolsClientProps) {
+export default function ToolsClient() {
     const { isLoaded, isSignedIn } = useUser()
-    const [tools, setTools] = useState<DevTool[]>(initialTools)
-    const [loading, setLoading] = useState(false)
+    const [tools, setTools] = useState<DevTool[]>([])
+    const [loading, setLoading] = useState(true)
     const [showForm, setShowForm] = useState(false)
     const [editingToolId, setEditingToolId] = useState<string | null>(null)
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -39,7 +35,13 @@ export default function ToolsClient({ initialTools }: ToolsClientProps) {
     })
     const [formData, setFormData] = useState({ name: '', url: '', icon: '🔧', category: 'その他', description: '' })
 
-
+    // クライアントサイドでデータ取得
+    useEffect(() => {
+        fetch('/api/tools')
+            .then(r => r.json())
+            .then(data => { setTools(Array.isArray(data) ? data : []); setLoading(false) })
+            .catch(() => setLoading(false))
+    }, [])
 
     const handleSave = async () => {
         if (!formData.name || !formData.url) return
