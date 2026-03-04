@@ -6,7 +6,7 @@ import { Database } from '@/types/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Search, ExternalLink, Settings, Folder, Tag, LayoutGrid, Menu, X, Pencil, StickyNote, ArrowUpDown, Wrench, CheckCircle2 } from 'lucide-react'
+import { Plus, Search, ExternalLink, Settings, Folder, Tag, LayoutGrid, Menu, X, Pencil, StickyNote, ArrowUpDown, Wrench, CheckCircle2, List } from 'lucide-react'
 import Link from 'next/link'
 
 type AppWithRelations = Database['public']['Tables']['apps']['Row'] & {
@@ -30,6 +30,7 @@ export default function DashboardPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | 'all'>('all')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sortBy, setSortBy] = useState<SortType>('name')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
   // インライン編集用ステート
   const [editingDisplayName, setEditingDisplayName] = useState<string | null>(null)
@@ -343,6 +344,22 @@ export default function DashboardPage() {
                 <option value="created">新しい順</option>
                 <option value="status">ステータス順</option>
               </select>
+              <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5 ml-1 hidden sm:flex">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                  title="カードビュー"
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                  title="リストビュー"
+                >
+                  <List className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
             <div className="flex gap-1 p-1 bg-slate-200/50 rounded-xl overflow-x-auto no-scrollbar w-full sm:w-auto">
               {(['全て', '採用', '企画中', '保留', '除外'] as const).map(status => (
@@ -362,19 +379,157 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+          <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5" : "flex flex-col gap-3"}>
             {sortedApps.map(app => (
-              <Card key={app.id} className="group border-none shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 bg-white rounded-2xl overflow-hidden ring-1 ring-slate-200">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="text-2xl w-11 h-11 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 duration-300">
-                        {app.icon || '📱'}
+              viewMode === 'grid' ? (
+                <Card key={app.id} className="group border-none shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 bg-white rounded-2xl overflow-hidden ring-1 ring-slate-200">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="text-2xl w-11 h-11 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 duration-300">
+                          {app.icon || '📱'}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          {/* 表示名（クリックでインライン編集） */}
+                          {editingDisplayName === app.id ? (
+                            <div className="flex gap-1">
+                              <input
+                                autoFocus
+                                className="text-sm font-bold text-slate-900 border border-indigo-300 rounded-lg px-2 py-0.5 w-full outline-none focus:ring-1 focus:ring-indigo-400"
+                                value={tempDisplayName}
+                                onChange={e => setTempDisplayName(e.target.value)}
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter') handleSaveDisplayName(app.id)
+                                  if (e.key === 'Escape') setEditingDisplayName(null)
+                                }}
+                                onBlur={() => handleSaveDisplayName(app.id)}
+                                placeholder="日本語名を入力..."
+                              />
+                            </div>
+                          ) : (
+                            <div className="group/name">
+                              <button
+                                onClick={() => { setEditingDisplayName(app.id); setTempDisplayName(app.display_name || '') }}
+                                className="flex items-center gap-1 text-left w-full"
+                              >
+                                <CardTitle className="text-base font-bold text-slate-900 truncate tracking-tight">
+                                  {app.display_name || app.name}
+                                </CardTitle>
+                                <Pencil className="h-3 w-3 text-slate-300 opacity-0 group-hover/name:opacity-100 transition-opacity flex-shrink-0" />
+                              </button>
+                            </div>
+                          )}
+                          {/* 元のアプリ名（常に小さく表示） */}
+                          <p className="text-[10px] text-slate-400 font-mono truncate mt-0.5">{app.name}</p>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const nextStatus: Record<string, string> = {
+                                  '採用': '保留', '保留': '企画中', '企画中': '採用', '除外': '採用'
+                                }
+                                handleQuickStatus(app.id, nextStatus[app.status] || '採用')
+                              }}
+                              className="flex items-center gap-1 hover:bg-slate-100 rounded px-1 py-0.5 transition-colors"
+                              title="クリックでステータス切替"
+                            >
+                              <span className={`w-1.5 h-1.5 rounded-full ${app.status === '採用' ? 'bg-emerald-500'
+                                : app.status === '企画中' ? 'bg-amber-400'
+                                  : app.status === '保留' ? 'bg-slate-400' : 'bg-red-400'
+                                }`} />
+                              <span className="text-[11px] text-slate-500 font-medium">{app.status}</span>
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        {/* 表示名（クリックでインライン編集） */}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pb-3 pt-0">
+                    <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed min-h-[2rem]">
+                      {app.description || '説明なし'}
+                    </p>
+                    {/* メモプレビュー */}
+                    {app.notes && (
+                      <div className="mt-2 p-2 bg-amber-50/80 rounded-lg border border-amber-100">
+                        <p className="text-xs text-amber-700 line-clamp-2 flex items-start gap-1">
+                          <StickyNote className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                          {app.notes}
+                        </p>
+                      </div>
+                    )}
+                    {/* タスク進捗 */}
+                    {app.app_tasks && app.app_tasks.length > 0 && (() => {
+                      const total = app.app_tasks!.length
+                      const done = app.app_tasks!.filter(t => t.completed).length
+                      const pct = Math.round((done / total) * 100)
+                      return (
+                        <div className="mt-2">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              {done}/{total} タスク完了
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-bold">{pct}%</span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-1.5">
+                            <div
+                              className={`h-1.5 rounded-full transition-all duration-500 ${pct === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })()}
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {app.categories && (
+                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold"
+                          style={{
+                            backgroundColor: (app.categories.color || '#6366f1') + '15',
+                            color: app.categories.color || '#6366f1'
+                          }}>
+                          <Tag className="h-2.5 w-2.5" />
+                          {app.categories.name}
+                        </span>
+                      )}
+                      {app.projects && (
+                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-bold">
+                          <Folder className="h-2.5 w-2.5" />
+                          {app.projects.name}
+                        </span>
+                      )}
+                      {app.tags?.slice(0, 2).map((tag: string) => (
+                        <span key={tag} className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </CardContent>
+                  <CardFooter className="pt-0 pb-4 px-5 flex gap-2">
+                    {app.url && (
+                      <a href={app.url} target="_blank" rel="noopener noreferrer" className="flex-1">
+                        <Button className="w-full gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl h-9 text-sm">
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          開く
+                        </Button>
+                      </a>
+                    )}
+                    <Link href={`/apps/${app.id}`}>
+                      <Button variant="outline" className="rounded-xl border-slate-200 hover:bg-slate-50 hover:text-indigo-600 h-9 px-3">
+                        <Settings className="h-3.5 w-3.5" />
+                      </Button>
+                    </Link>
+                  </CardFooter>
+                </Card>
+              ) : (
+                <div key={app.id} className="group bg-white rounded-xl ring-1 ring-slate-200 p-3 hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 relative">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="text-xl w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 duration-300">
+                      {app.icon || '📱'}
+                    </div>
+                    <div className="min-w-0 flex-1 flex flex-col justify-center">
+                      <div className="flex items-center gap-2">
                         {editingDisplayName === app.id ? (
-                          <div className="flex gap-1">
+                          <div className="flex gap-1 w-full max-w-[200px]">
                             <input
                               autoFocus
                               className="text-sm font-bold text-slate-900 border border-indigo-300 rounded-lg px-2 py-0.5 w-full outline-none focus:ring-1 focus:ring-indigo-400"
@@ -385,123 +540,82 @@ export default function DashboardPage() {
                                 if (e.key === 'Escape') setEditingDisplayName(null)
                               }}
                               onBlur={() => handleSaveDisplayName(app.id)}
-                              placeholder="日本語名を入力..."
+                              placeholder="日本語名..."
                             />
                           </div>
                         ) : (
-                          <div className="group/name">
-                            <button
-                              onClick={() => { setEditingDisplayName(app.id); setTempDisplayName(app.display_name || '') }}
-                              className="flex items-center gap-1 text-left w-full"
-                            >
-                              <CardTitle className="text-base font-bold text-slate-900 truncate tracking-tight">
-                                {app.display_name || app.name}
-                              </CardTitle>
-                              <Pencil className="h-3 w-3 text-slate-300 opacity-0 group-hover/name:opacity-100 transition-opacity flex-shrink-0" />
-                            </button>
-                          </div>
-                        )}
-                        {/* 元のアプリ名（常に小さく表示） */}
-                        <p className="text-[10px] text-slate-400 font-mono truncate mt-0.5">{app.name}</p>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              const nextStatus: Record<string, string> = {
-                                '採用': '保留', '保留': '企画中', '企画中': '採用', '除外': '採用'
-                              }
-                              handleQuickStatus(app.id, nextStatus[app.status] || '採用')
-                            }}
-                            className="flex items-center gap-1 hover:bg-slate-100 rounded px-1 py-0.5 transition-colors"
-                            title="クリックでステータス切替"
-                          >
-                            <span className={`w-1.5 h-1.5 rounded-full ${app.status === '採用' ? 'bg-emerald-500'
-                              : app.status === '企画中' ? 'bg-amber-400'
-                                : app.status === '保留' ? 'bg-slate-400' : 'bg-red-400'
-                              }`} />
-                            <span className="text-[11px] text-slate-500 font-medium">{app.status}</span>
+                          <button onClick={() => { setEditingDisplayName(app.id); setTempDisplayName(app.display_name || '') }} className="group/name flex items-center gap-1 text-left min-w-0">
+                            <span className="text-sm font-bold text-slate-900 truncate">{app.display_name || app.name}</span>
+                            <Pencil className="h-3 w-3 text-slate-300 opacity-0 group-hover/name:opacity-100 transition-opacity flex-shrink-0" />
                           </button>
-                        </div>
+                        )}
+                        {app.display_name && <span className="text-[10px] text-slate-400 font-mono truncate hidden sm:inline">{app.name}</span>}
                       </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-3 pt-0">
-                  <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed min-h-[2rem]">
-                    {app.description || '説明なし'}
-                  </p>
-                  {/* メモプレビュー */}
-                  {app.notes && (
-                    <div className="mt-2 p-2 bg-amber-50/80 rounded-lg border border-amber-100">
-                      <p className="text-xs text-amber-700 line-clamp-2 flex items-start gap-1">
-                        <StickyNote className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                        {app.notes}
-                      </p>
-                    </div>
-                  )}
-                  {/* タスク進捗 */}
-                  {app.app_tasks && app.app_tasks.length > 0 && (() => {
-                    const total = app.app_tasks!.length
-                    const done = app.app_tasks!.filter(t => t.completed).length
-                    const pct = Math.round((done / total) * 100)
-                    return (
-                      <div className="mt-2">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
-                            <CheckCircle2 className="h-3 w-3" />
-                            {done}/{total} タスク完了
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <button onClick={(e) => {
+                          e.stopPropagation()
+                          const nextStatus: Record<string, string> = { '採用': '保留', '保留': '企画中', '企画中': '採用', '除外': '採用' }
+                          handleQuickStatus(app.id, nextStatus[app.status] || '採用')
+                        }}
+                          className="flex items-center gap-1 hover:bg-slate-100 rounded px-1 -ml-1 py-0.5 transition-colors" title="クリックでステータス切替">
+                          <span className={`w-1.5 h-1.5 rounded-full ${app.status === '採用' ? 'bg-emerald-500' : app.status === '企画中' ? 'bg-amber-400' : app.status === '保留' ? 'bg-slate-400' : 'bg-red-400'}`} />
+                          <span className="text-[11px] text-slate-500 font-medium">{app.status}</span>
+                        </button>
+
+                        {app.categories && (
+                          <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold" style={{ backgroundColor: (app.categories.color || '#6366f1') + '15', color: app.categories.color || '#6366f1' }}>
+                            <Tag className="h-2 w-2" />
+                            {app.categories.name}
                           </span>
-                          <span className="text-[10px] text-slate-400 font-bold">{pct}%</span>
-                        </div>
-                        <div className="w-full bg-slate-100 rounded-full h-1.5">
-                          <div
-                            className={`h-1.5 rounded-full transition-all duration-500 ${pct === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
+                        )}
+                        {app.projects && (
+                          <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded-full font-bold hidden sm:inline-flex">
+                            <Folder className="h-2 w-2" />
+                            {app.projects.name}
+                          </span>
+                        )}
                       </div>
-                    )
-                  })()}
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {app.categories && (
-                      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold"
-                        style={{
-                          backgroundColor: (app.categories.color || '#6366f1') + '15',
-                          color: app.categories.color || '#6366f1'
-                        }}>
-                        <Tag className="h-2.5 w-2.5" />
-                        {app.categories.name}
-                      </span>
-                    )}
-                    {app.projects && (
-                      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-bold">
-                        <Folder className="h-2.5 w-2.5" />
-                        {app.projects.name}
-                      </span>
-                    )}
-                    {app.tags?.slice(0, 2).map((tag: string) => (
-                      <span key={tag} className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full">
-                        {tag}
-                      </span>
-                    ))}
+                    </div>
                   </div>
-                </CardContent>
-                <CardFooter className="pt-0 pb-4 px-5 flex gap-2">
-                  {app.url && (
-                    <a href={app.url} target="_blank" rel="noopener noreferrer" className="flex-1">
-                      <Button className="w-full gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl h-9 text-sm">
-                        <ExternalLink className="h-3.5 w-3.5" />
-                        開く
-                      </Button>
-                    </a>
-                  )}
-                  <Link href={`/apps/${app.id}`}>
-                    <Button variant="outline" className="rounded-xl border-slate-200 hover:bg-slate-50 hover:text-indigo-600 h-9 px-3">
-                      <Settings className="h-3.5 w-3.5" />
-                    </Button>
-                  </Link>
-                </CardFooter>
-              </Card>
+
+                  {/* Right side actions */}
+                  <div className="flex items-center gap-3 sm:gap-6 w-full sm:w-auto pl-12 sm:pl-0 justify-between sm:justify-end">
+                    {/* Tasks */}
+                    <div className="w-24 flex-shrink-0 hidden md:block">
+                      {app.app_tasks && app.app_tasks.length > 0 ? (() => {
+                        const total = app.app_tasks!.length
+                        const done = app.app_tasks!.filter(t => t.completed).length
+                        const pct = Math.round((done / total) * 100)
+                        return (
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[9px] text-slate-400 font-bold flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5" />{done}/{total}</span>
+                              <span className="text-[9px] text-slate-400 text-right">{pct}%</span>
+                            </div>
+                            <div className="w-full bg-slate-100 rounded-full h-1"><div className={`h-1 rounded-full transition-all duration-500 ${pct === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`} style={{ width: `${pct}%` }} /></div>
+                          </div>
+                        )
+                      })() : <div className="text-[10px] text-slate-300">タスクなし</div>}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-1.5">
+                      {app.url && (
+                        <a href={app.url} target="_blank" rel="noopener noreferrer">
+                          <Button size="sm" variant="ghost" className="h-8 px-2 text-indigo-600 hover:bg-indigo-50">
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </a>
+                      )}
+                      <Link href={`/apps/${app.id}`}>
+                        <Button size="sm" variant="ghost" className="h-8 px-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-50">
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              )
             ))}
           </div>
 
