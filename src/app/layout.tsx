@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Inter } from "next/font/google";
 import "./globals.css";
-
 import BottomNav from "@/components/BottomNav";
 import SwipeNavigator from "@/components/SwipeNavigator";
+import PageTransition from "@/components/PageTransition";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -37,8 +37,10 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="ja">
-        <body className={`${inter.className} pb-16 sm:pb-0 relative min-h-screen`}>
-          {children}
+        <body className={`${inter.className} pb-16 sm:pb-0 relative min-h-screen overflow-x-hidden`}>
+          <PageTransition>
+            {children}
+          </PageTransition>
           <BottomNav />
           <SwipeNavigator />
         </body>
