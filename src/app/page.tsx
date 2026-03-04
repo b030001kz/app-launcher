@@ -6,7 +6,7 @@ import { Database } from '@/types/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Search, ExternalLink, Settings, Folder, Tag, LayoutGrid, Menu, X, Pencil, StickyNote, ChevronDown } from 'lucide-react'
+import { Plus, Search, ExternalLink, Settings, Folder, Tag, LayoutGrid, Menu, X, Pencil, StickyNote, ArrowUpDown } from 'lucide-react'
 import Link from 'next/link'
 
 type AppWithRelations = Database['public']['Tables']['apps']['Row'] & {
@@ -17,6 +17,7 @@ type AppWithRelations = Database['public']['Tables']['apps']['Row'] & {
 type Category = Database['public']['Tables']['categories']['Row']
 type Project = Database['public']['Tables']['projects']['Row']
 type StatusType = '全て' | '採用' | '保留' | '除外' | '企画中'
+type SortType = 'name' | 'created' | 'status'
 
 export default function DashboardPage() {
   const { isLoaded, isSignedIn } = useUser()
@@ -27,6 +28,7 @@ export default function DashboardPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | 'all'>('all')
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | 'all'>('all')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sortBy, setSortBy] = useState<SortType>('name')
 
   // インライン編集用ステート
   const [editingDisplayName, setEditingDisplayName] = useState<string | null>(null)
@@ -92,6 +94,15 @@ export default function DashboardPage() {
     return matchesSearch && matchesStatus && matchesProject && matchesCategory
   })
 
+  // ソート
+  const sortedApps = [...filteredApps].sort((a, b) => {
+    if (sortBy === 'name') return (a.display_name || a.name).localeCompare(b.display_name || b.name, 'ja')
+    if (sortBy === 'created') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    // status順: 企画中 → 採用 → 保留 → 除外
+    const order: Record<string, number> = { '企画中': 0, '採用': 1, '保留': 2, '除外': 3 }
+    return (order[a.status] ?? 9) - (order[b.status] ?? 9)
+  })
+
   // 表示名のインライン更新
   const handleSaveDisplayName = async (appId: string) => {
     try {
@@ -111,6 +122,22 @@ export default function DashboardPage() {
       console.error('Failed to update display name:', err)
     } finally {
       setEditingDisplayName(null)
+    }
+  }
+
+  // クイックステータス変更
+  const handleQuickStatus = async (appId: string, newStatus: string) => {
+    try {
+      await fetch(`/api/apps/${appId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      })
+      setApps(prev => prev.map(a =>
+        a.id === appId ? { ...a, status: newStatus as any } : a
+      ))
+    } catch (err) {
+      console.error('Failed to update status:', err)
     }
   }
 
@@ -296,8 +323,19 @@ export default function DashboardPage() {
                     : 'Your Applications'}
               </h2>
               <p className="text-sm text-slate-500">
-                {filteredApps.length} 件
+                {sortedApps.length} 件
               </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as SortType)}
+                className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 text-slate-600 bg-white"
+              >
+                <option value="name">名前順</option>
+                <option value="created">新しい順</option>
+                <option value="status">ステータス順</option>
+              </select>
             </div>
             <div className="flex gap-1 p-1 bg-slate-200/50 rounded-xl overflow-x-auto no-scrollbar w-full sm:w-auto">
               {(['全て', '採用', '企画中', '保留', '除外'] as const).map(status => (
@@ -305,10 +343,10 @@ export default function DashboardPage() {
                   key={status}
                   onClick={() => setStatusFilter(status)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-1 sm:flex-none ${statusFilter === status
-                      ? status === '企画中' ? 'bg-white text-amber-600 shadow-sm'
-                        : status === '除外' ? 'bg-white text-red-500 shadow-sm'
-                          : 'bg-white text-indigo-600 shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700'
+                    ? status === '企画中' ? 'bg-white text-amber-600 shadow-sm'
+                      : status === '除外' ? 'bg-white text-red-500 shadow-sm'
+                        : 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
                     }`}
                 >
                   {status === '企画中' ? '💡企画' : status}
@@ -318,7 +356,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
-            {filteredApps.map(app => (
+            {sortedApps.map(app => (
               <Card key={app.id} className="group border-none shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 bg-white rounded-2xl overflow-hidden ring-1 ring-slate-200">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -359,11 +397,23 @@ export default function DashboardPage() {
                         {/* 元のアプリ名（常に小さく表示） */}
                         <p className="text-[10px] text-slate-400 font-mono truncate mt-0.5">{app.name}</p>
                         <div className="flex items-center gap-1.5 mt-1">
-                          <span className={`w-1.5 h-1.5 rounded-full ${app.status === '採用' ? 'bg-emerald-500'
-                              : app.status === '企画中' ? 'bg-amber-400'
-                                : app.status === '保留' ? 'bg-slate-400' : 'bg-red-400'
-                            }`} />
-                          <span className="text-[11px] text-slate-500 font-medium">{app.status}</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              const nextStatus: Record<string, string> = {
+                                '採用': '保留', '保留': '企画中', '企画中': '採用', '除外': '採用'
+                              }
+                              handleQuickStatus(app.id, nextStatus[app.status] || '採用')
+                            }}
+                            className="flex items-center gap-1 hover:bg-slate-100 rounded px-1 py-0.5 transition-colors"
+                            title="クリックでステータス切替"
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${app.status === '採用' ? 'bg-emerald-500'
+                                : app.status === '企画中' ? 'bg-amber-400'
+                                  : app.status === '保留' ? 'bg-slate-400' : 'bg-red-400'
+                              }`} />
+                            <span className="text-[11px] text-slate-500 font-medium">{app.status}</span>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -425,7 +475,7 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          {filteredApps.length === 0 && (
+          {sortedApps.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
               <div className="w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center mb-3">
                 <Search className="h-7 w-7 text-slate-300" />

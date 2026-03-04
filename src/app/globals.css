@@ -2,7 +2,7 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0f172a;
 }
 
 @theme inline {
@@ -21,18 +21,11 @@
   --color-card: #ffffff;
   --color-card-foreground: #0f172a;
   --color-border: #e2e8f0;
-  --color-input: #f1f5f9;
-  --color-ring: #3b82f6;
+  --color-input: #ffffff;
+  --color-ring: #4f46e5;
   --color-ring-offset-background: #ffffff;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 * {
@@ -43,4 +36,17 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* 全てのinput/select/textareaを明示的にライトモードに */
+input,
+select,
+textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8 !important;
 }
