@@ -4,6 +4,9 @@ import DashboardClient from '@/components/DashboardClient'
 import { Database } from '@/types/supabase'
 import { redirect } from 'next/navigation'
 
+import { Suspense } from 'react'
+import DashboardLoading from './loading'
+
 export const dynamic = 'force-dynamic'
 
 type AppWithRelations = Database['public']['Tables']['apps']['Row'] & {
@@ -12,7 +15,15 @@ type AppWithRelations = Database['public']['Tables']['apps']['Row'] & {
     app_tasks: Database['public']['Tables']['app_tasks']['Row'][] | null
 }
 
-export default async function DashboardPage() {
+export default function DashboardPage() {
+    return (
+        <Suspense fallback={<DashboardLoading />}>
+            <DashboardContent />
+        </Suspense>
+    )
+}
+
+async function DashboardContent() {
     const { userId } = await auth()
 
     if (!userId) {

@@ -4,11 +4,22 @@ import ProjectsClient from '@/components/ProjectsClient'
 import { Database } from '@/types/supabase'
 import { redirect } from 'next/navigation'
 
+import { Suspense } from 'react'
+import ProjectsLoading from './loading'
+
 type Project = Database['public']['Tables']['projects']['Row']
 
 export const dynamic = 'force-dynamic'
 
-export default async function ProjectsPage() {
+export default function ProjectsPage() {
+    return (
+        <Suspense fallback={<ProjectsLoading />}>
+            <ProjectsContent />
+        </Suspense>
+    )
+}
+
+async function ProjectsContent() {
     const { userId } = await auth()
 
     if (!userId) {

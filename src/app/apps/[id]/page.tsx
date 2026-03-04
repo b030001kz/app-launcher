@@ -3,13 +3,24 @@ import AppForm from '@/components/AppForm'
 import { notFound } from 'next/navigation'
 import { auth } from '@clerk/nextjs/server'
 
+import { Suspense } from 'react'
+import DashboardLoading from '../../loading' // appsディレクトリのloadingがないためトップレベルから流用
+
 export const dynamic = 'force-dynamic'
 
 interface EditAppPageProps {
     params: Promise<{ id: string }>
 }
 
-export default async function EditAppPage({ params }: EditAppPageProps) {
+export default function EditAppPage({ params }: EditAppPageProps) {
+    return (
+        <Suspense fallback={<DashboardLoading />}>
+            <EditAppContent params={params} />
+        </Suspense>
+    )
+}
+
+async function EditAppContent({ params }: EditAppPageProps) {
     const { userId } = await auth()
     if (!userId) notFound()
 

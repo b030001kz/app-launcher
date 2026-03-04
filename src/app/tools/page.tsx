@@ -4,11 +4,22 @@ import ToolsClient from '@/components/ToolsClient'
 import { Database } from '@/types/supabase'
 import { redirect } from 'next/navigation'
 
+import { Suspense } from 'react'
+import ToolsLoading from './loading'
+
 export const dynamic = 'force-dynamic'
 
 type DevTool = Database['public']['Tables']['dev_tools']['Row']
 
-export default async function ToolsPage() {
+export default function ToolsPage() {
+    return (
+        <Suspense fallback={<ToolsLoading />}>
+            <ToolsContent />
+        </Suspense>
+    )
+}
+
+async function ToolsContent() {
     const { userId } = await auth()
 
     if (!userId) {
