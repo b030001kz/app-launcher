@@ -155,8 +155,28 @@ export default function DashboardClient() {
 
   if (!isLoaded || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <p className="text-slate-400 animate-pulse text-lg font-medium">Loading...</p>
+      <div className="flex flex-col h-full w-full animate-pulse">
+        <div className="hidden sm:flex bg-white/70 border-b border-slate-200 px-6 py-4 items-center justify-between">
+          <div className="h-10 w-64 bg-slate-200 rounded-lg" />
+          <div className="flex gap-2">
+            <div className="h-9 w-20 bg-slate-200 rounded-lg" />
+            <div className="h-9 w-20 bg-slate-200 rounded-lg" />
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#f8fafc]">
+          <div className="flex gap-2 mb-6 sm:hidden">
+            <div className="h-10 flex-1 bg-slate-200 rounded-lg" />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-5">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="bg-white rounded-2xl p-4 ring-1 ring-slate-100 flex flex-col items-center gap-3">
+                <div className="w-14 h-14 rounded-2xl bg-slate-200" />
+                <div className="w-20 h-4 bg-slate-200 rounded" />
+                <div className="w-16 h-3 bg-slate-100 rounded" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
