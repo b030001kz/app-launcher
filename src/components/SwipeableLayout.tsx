@@ -120,7 +120,7 @@ export default function SwipeableLayout({ children }: { children: ReactNode }) {
         <div
             ref={containerRef}
             className="w-full h-full"
-            style={{ willChange: 'transform, opacity' }}
+            style={{ willChange: 'transform, opacity', touchAction: 'pan-y' }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
